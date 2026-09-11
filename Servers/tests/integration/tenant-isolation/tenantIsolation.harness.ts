@@ -261,6 +261,7 @@ export async function assertListOnlyOwnOrg(
   listRoute: string,
   seedResource: (ctx: TenantContext) => Promise<number>,
   extractItems: (res: Response) => any[],
+  attackerStatuses: number[] = [200],
 ): Promise<void> {
   await seedResource(owner);
 
@@ -269,7 +270,7 @@ export async function assertListOnlyOwnOrg(
   expect(extractItems(ownerList).length).toBeGreaterThan(0);
 
   const attackerList = await attacker.request.get(listRoute);
-  expect(attackerList.status).toBe(200);
+  expect(attackerStatuses).toContain(attackerList.status);
   expect(extractItems(attackerList).length).toBe(0);
 }
 
@@ -287,7 +288,20 @@ export async function assertCreateStampsCallerOrg(
 ): Promise<number> {
   const payload = buildPayload(foreignOrgId);
   const res = await caller.request.post(routes.create).send(payload);
+  return assertCreatedRowStampedWithCallerOrg(caller, res, dbTable, extractId);
+}
 
+/**
+ * Assert that a create response succeeded and that the new row carries the
+ * caller's organization_id. Use it directly for creates a JSON body can't
+ * reach (e.g. a multipart upload).
+ */
+export async function assertCreatedRowStampedWithCallerOrg(
+  caller: TenantContext,
+  res: Response,
+  dbTable: string,
+  extractId: (res: Response) => number | undefined = (res) => res.body?.data?.id ?? res.body?.id,
+): Promise<number> {
   expect([200, 201]).toContain(res.status);
 
   const id = extractId(res);

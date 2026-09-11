@@ -18,7 +18,7 @@
 
 import { crudEntity } from "./tenantIsolation.matrix";
 import type { MatrixSpec } from "./tenantIsolation.matrix";
-import { taskFixture } from "./tenantIsolation.fixtures";
+import { fileFixture, projectFixture, riskFixture, taskFixture } from "./tenantIsolation.fixtures";
 
 export interface IsolationEntity {
   /** Human-readable entity name (kebab-case). */
@@ -32,6 +32,11 @@ export interface IsolationEntity {
    * and are tested by tenantIsolation.matrix.test.ts.
    */
   matrix?: MatrixSpec;
+  /**
+   * Hand-written test file covering this entry, when it isn't the default
+   * `{name with _ → -}.isolation.test.ts`. Checked by tenantIsolation.coverage.test.ts.
+   */
+  testFile?: string;
 }
 
 /**
@@ -42,26 +47,30 @@ export interface IsolationEntity {
  * allow-list in `scripts/auditTenantIsolationCoverage.ts`.
  */
 export const tenantIsolationRegistry: IsolationEntity[] = [
-  {
-    name: "projects",
-    tables: ["projects"],
-    baseRoute: "/api/projects",
-  },
-  {
-    name: "files",
-    tables: ["files"],
-    baseRoute: "/api/files",
-  },
+  crudEntity("projects", "/api/projects", ["projects"], projectFixture, {
+    extractCreatedId: (res) => res.body?.data?.project?.id,
+  }),
+  // Update, delete and create live on the file-manager routes (same `files` table);
+  // /api/files has only list and the Admin-only download.
+  crudEntity("files", "/api/files", ["files"], fileFixture, {
+    routes: {
+      update: (id) => `/api/file-manager/${id}/metadata`,
+      delete: (id) => `/api/file-manager/${id}`,
+      create: "/api/file-manager",
+    },
+    denial: { read: [403, 404] },
+  }),
   {
     name: "users",
     tables: ["users"],
     baseRoute: "/api/users",
   },
-  {
-    name: "risks",
-    tables: ["risks", "projects_risks"],
-    baseRoute: "/api/projectRisks",
-  },
+  // The risks controller answers "not found" and an empty list with 204.
+  crudEntity("risks", "/api/projectRisks", ["risks", "projects_risks"], riskFixture, {
+    updateVerb: "PUT",
+    denial: { read: [204, 404] },
+    attackerListStatuses: [200, 204],
+  }),
   crudEntity("tasks", "/api/tasks", ["tasks", "task_assignees"], taskFixture, {
     updateVerb: "PUT",
   }),
@@ -159,11 +168,13 @@ export const tenantIsolationRegistry: IsolationEntity[] = [
     name: "mrm_org_settings",
     tables: ["mrm_org_settings"],
     baseRoute: "/api/mrm/settings",
+    testFile: "mrm-alerts.isolation.test.ts",
   },
   {
     name: "mrm_alert_recipients",
     tables: ["mrm_alert_recipients"],
     baseRoute: "/api/mrm/settings",
+    testFile: "mrm-alerts.isolation.test.ts",
   },
   {
     name: "report_templates",

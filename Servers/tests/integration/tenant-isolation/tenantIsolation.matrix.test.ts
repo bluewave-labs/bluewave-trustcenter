@@ -13,6 +13,7 @@ jest.setTimeout(60000);
  * @see docs/technical/security/tenant-isolation.md
  */
 
+import type { Response } from "supertest";
 import { cleanupDatabase } from "../helpers";
 import {
   seedTwoTenantContexts,
@@ -20,17 +21,39 @@ import {
   assertReadDenied,
   assertUpdateDenied,
   assertDeleteDenied,
-  assertCreateStampsCallerOrg,
+  assertCreatedRowStampedWithCallerOrg,
 } from "./tenantIsolation.harness";
+import type { TenantContext } from "./tenantIsolation.harness";
 import { tenantIsolationRegistry } from "./tenantIsolation.registry";
 import type { MatrixOp, MatrixSpec } from "./tenantIsolation.matrix";
+
+async function sendCreate(
+  spec: MatrixSpec,
+  owner: TenantContext,
+  foreignOrgId: number,
+): Promise<Response> {
+  if (spec.createRequest) return spec.createRequest(owner, foreignOrgId, spec.routes.create);
+  if (!spec.createPayload) {
+    throw new Error(
+      "create is not skipped, but the fixture has neither createRequest nor createPayload",
+    );
+  }
+  return owner.request.post(spec.routes.create).send(await spec.createPayload(owner, foreignOrgId));
+}
 
 const OPS: Record<MatrixOp, { title: string; run: (spec: MatrixSpec) => Promise<void> }> = {
   list: {
     title: "lists only rows in the caller's organization",
     run: async (spec) => {
       const { owner, attacker } = await seedTwoTenantContexts();
-      await assertListOnlyOwnOrg(owner, attacker, spec.routes.list, spec.seed, spec.extractItems);
+      await assertListOnlyOwnOrg(
+        owner,
+        attacker,
+        spec.routes.list,
+        spec.seed,
+        spec.extractItems,
+        spec.attackerListStatuses,
+      );
     },
   },
   read: {
@@ -55,7 +78,7 @@ const OPS: Record<MatrixOp, { title: string; run: (spec: MatrixSpec) => Promise<
         table: spec.primaryTable,
         denial: spec.denial.write,
         verb: spec.updateVerb,
-        payload: spec.updatePayload(owner),
+        payload: await spec.updatePayload(owner),
       });
     },
   },
@@ -77,16 +100,11 @@ const OPS: Record<MatrixOp, { title: string; run: (spec: MatrixSpec) => Promise<
   create: {
     title: "stamps the caller's organization_id and ignores a foreign one in the body",
     run: async (spec) => {
-      const buildPayload = spec.createPayload;
-      if (!buildPayload) {
-        throw new Error("create is not skipped, but the fixture has no createPayload");
-      }
       const { owner, attacker } = await seedTwoTenantContexts();
-      await assertCreateStampsCallerOrg(
+      const res = await sendCreate(spec, owner, attacker.orgId);
+      await assertCreatedRowStampedWithCallerOrg(
         owner,
-        attacker.orgId,
-        { create: spec.routes.create },
-        (foreignOrgId) => buildPayload(owner, foreignOrgId),
+        res,
         spec.primaryTable,
         spec.extractCreatedId,
       );
