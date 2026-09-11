@@ -1,5 +1,6 @@
 export interface MockProject {
   id: number;
+  organization_id: number;
   name: string;
   description: string;
   status: string;
@@ -12,6 +13,7 @@ export interface MockProject {
 export function createMockProject(overrides: Partial<MockProject> = {}): MockProject {
   return {
     id: 1,
+    organization_id: 1,
     name: "AI Governance Assessment",
     description: "Comprehensive AI governance and compliance assessment project",
     status: "active",

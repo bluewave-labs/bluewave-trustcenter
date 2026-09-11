@@ -8,6 +8,12 @@ import { mockTasks, createMockTask } from "./data/tasks";
 import { mockUsers, createMockUser } from "./data/users";
 import { mockFiles, mockFilePagination } from "./data/files";
 import {
+  mockForeignFile,
+  mockForeignProject,
+  mockForeignRisk,
+  mockForeignTask,
+} from "./data/foreignOrg";
+import {
   mockShadowAiApiKeys,
   mockShadowAiApiKeyCreated,
   mockShadowAiTools,
@@ -43,6 +49,15 @@ import {
 import { mockFrameworks } from "./data/frameworks";
 import { mockInvitations } from "./data/invitations";
 import { mockSsoConfig, mockSsoStatus, mockSsoOrgs, mockUserPreferences } from "./data/settings";
+
+/**
+ * By-id lookup that also sees the other organization's record, the way a
+ * backend without tenant scoping would. List handlers never include foreign
+ * records. crossOrgGuard.ts is what turns a request for one into a 403.
+ */
+function byId<T extends { id: number }>(own: T[], foreign: T, id: unknown): T | undefined {
+  return [...own, foreign].find((record) => String(record.id) === String(id));
+}
 
 export const handlers = [
   // Health check
@@ -116,7 +131,7 @@ export const handlers = [
   // ==================== Projects ====================
   http.get("/api/projects", () => HttpResponse.json({ data: mockProjects })),
   http.get("/api/projects/:id", ({ params }) => {
-    const project = mockProjects.find((p) => String(p.id) === params.id);
+    const project = byId(mockProjects, mockForeignProject, params.id);
     if (!project) return new HttpResponse(null, { status: 404 });
     return HttpResponse.json({ data: project });
   }),
@@ -126,20 +141,28 @@ export const handlers = [
   }),
   http.patch("/api/projects/:id", async ({ params, request }) => {
     const body = (await request.json()) as Record<string, unknown>;
-    const project = mockProjects.find((p) => String(p.id) === params.id);
+    const project = byId(mockProjects, mockForeignProject, params.id);
     if (!project) return new HttpResponse(null, { status: 404 });
     return HttpResponse.json({ data: { ...project, ...body } });
   }),
   http.delete("/api/projects/:id", ({ params }) => {
-    const project = mockProjects.find((p) => String(p.id) === params.id);
+    const project = byId(mockProjects, mockForeignProject, params.id);
     if (!project) return new HttpResponse(null, { status: 404 });
     return new HttpResponse(null, { status: 204 });
   }),
 
   // ==================== Risks ====================
+  // The app's risk repository reads a single risk from /api/projectRisks/:id
+  // (projectRisk.repository.ts). Like the real controller, "not found" is a
+  // 204, not a 404.
+  http.get("/api/projectRisks/:id", ({ params }) => {
+    const risk = byId(mockRisks, mockForeignRisk, params.id);
+    if (!risk) return new HttpResponse(null, { status: 204 });
+    return HttpResponse.json({ data: risk });
+  }),
   http.get("/api/risks", () => HttpResponse.json({ data: mockRisks })),
   http.get("/api/risks/:id", ({ params }) => {
-    const risk = mockRisks.find((r) => String(r.id) === params.id);
+    const risk = byId(mockRisks, mockForeignRisk, params.id);
     if (!risk) return new HttpResponse(null, { status: 404 });
     return HttpResponse.json({ data: risk });
   }),
@@ -149,12 +172,12 @@ export const handlers = [
   }),
   http.patch("/api/risks/:id", async ({ params, request }) => {
     const body = (await request.json()) as Record<string, unknown>;
-    const risk = mockRisks.find((r) => String(r.id) === params.id);
+    const risk = byId(mockRisks, mockForeignRisk, params.id);
     if (!risk) return new HttpResponse(null, { status: 404 });
     return HttpResponse.json({ data: { ...risk, ...body } });
   }),
   http.delete("/api/risks/:id", ({ params }) => {
-    const risk = mockRisks.find((r) => String(r.id) === params.id);
+    const risk = byId(mockRisks, mockForeignRisk, params.id);
     if (!risk) return new HttpResponse(null, { status: 404 });
     return new HttpResponse(null, { status: 204 });
   }),
@@ -219,28 +242,28 @@ export const handlers = [
     return HttpResponse.json({ data: createMockTask(body as any) }, { status: 201 });
   }),
   http.get("/api/tasks/:id", ({ params }) => {
-    const task = mockTasks.find((t) => String(t.id) === params.id);
+    const task = byId(mockTasks, mockForeignTask, params.id);
     if (!task) return new HttpResponse(null, { status: 404 });
     return HttpResponse.json({ data: task });
   }),
   http.put("/api/tasks/:id", async ({ params, request }) => {
     const body = (await request.json()) as Record<string, unknown>;
-    const task = mockTasks.find((t) => String(t.id) === params.id);
+    const task = byId(mockTasks, mockForeignTask, params.id);
     if (!task) return new HttpResponse(null, { status: 404 });
     return HttpResponse.json({ data: { ...task, ...body } });
   }),
   http.delete("/api/tasks/:id", ({ params }) => {
-    const task = mockTasks.find((t) => String(t.id) === params.id);
+    const task = byId(mockTasks, mockForeignTask, params.id);
     if (!task) return new HttpResponse(null, { status: 404 });
     return HttpResponse.json({ message: "Task deleted" });
   }),
   http.put("/api/tasks/:id/restore", ({ params }) => {
-    const task = mockTasks.find((t) => String(t.id) === params.id);
+    const task = byId(mockTasks, mockForeignTask, params.id);
     if (!task) return new HttpResponse(null, { status: 404 });
     return HttpResponse.json({ data: { ...task, status: "Open" } });
   }),
   http.delete("/api/tasks/:id/hard", ({ params }) => {
-    const task = mockTasks.find((t) => String(t.id) === params.id);
+    const task = byId(mockTasks, mockForeignTask, params.id);
     if (!task) return new HttpResponse(null, { status: 404 });
     return HttpResponse.json({ message: "Task permanently deleted" });
   }),
@@ -651,7 +674,7 @@ export const handlers = [
   ),
 
   http.get("/api/file-manager/:id/metadata", ({ params }) => {
-    const file = mockFiles.find((f) => String(f.id) === String(params.id));
+    const file = byId(mockFiles, mockForeignFile, params.id);
     if (!file) {
       return HttpResponse.json({ message: "File not found" }, { status: 404 });
     }
@@ -659,7 +682,7 @@ export const handlers = [
   }),
 
   http.patch("/api/file-manager/:id/metadata", async ({ params, request }) => {
-    const file = mockFiles.find((f) => String(f.id) === String(params.id));
+    const file = byId(mockFiles, mockForeignFile, params.id);
     if (!file) {
       return HttpResponse.json({ message: "File not found" }, { status: 404 });
     }
