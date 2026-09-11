@@ -50,6 +50,7 @@ describe("Projects tenant isolation", () => {
       attacker,
       seedResource: async (ctx) => createTestProject(ctx.orgId, ctx.userId),
       routes: ROUTES,
+      updateVerb: "PATCH",
       updatePayload: { project_title: "Hacked" },
       createPayload: buildCreatePayload(attacker.orgId),
       dbTable: "projects",

@@ -4,11 +4,21 @@
  * This file declares every tenant-scoped entity covered by the cross-tenant
  * isolation test matrix and the schema-drift CI gate.
  *
- * Adding a new scoped entity should require one entry here, one factory, and
- * one thin per-entity test file that imports the reusable harness.
+ * Entries built with `crudEntity(...)` carry a `matrix` spec, and
+ * tenantIsolation.matrix.test.ts generates their list / read / update /
+ * delete / create isolation tests. Adding a conventional entity is one line
+ * here plus a fixture in tenantIsolation.fixtures.ts. Entries without a
+ * `matrix` spec are covered by a hand-written `{name}.isolation.test.ts`.
+ *
+ * The schema-drift audit script imports this file, so it must never import
+ * the harness (which loads the whole test app) at runtime.
  *
  * @see docs/technical/security/tenant-isolation.md
  */
+
+import { crudEntity } from "./tenantIsolation.matrix";
+import type { MatrixSpec } from "./tenantIsolation.matrix";
+import { taskFixture } from "./tenantIsolation.fixtures";
 
 export interface IsolationEntity {
   /** Human-readable entity name (kebab-case). */
@@ -17,6 +27,11 @@ export interface IsolationEntity {
   tables: string[];
   /** Base REST route for the entity. */
   baseRoute: string;
+  /**
+   * Declarative isolation spec. Entries built with `crudEntity(...)` have one
+   * and are tested by tenantIsolation.matrix.test.ts.
+   */
+  matrix?: MatrixSpec;
 }
 
 /**
@@ -47,11 +62,9 @@ export const tenantIsolationRegistry: IsolationEntity[] = [
     tables: ["risks", "projects_risks"],
     baseRoute: "/api/projectRisks",
   },
-  {
-    name: "tasks",
-    tables: ["tasks", "task_assignees"],
-    baseRoute: "/api/tasks",
-  },
+  crudEntity("tasks", "/api/tasks", ["tasks", "task_assignees"], taskFixture, {
+    updateVerb: "PUT",
+  }),
   {
     name: "vendors",
     tables: ["vendors", "vendors_projects"],

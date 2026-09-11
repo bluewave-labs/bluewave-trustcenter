@@ -45,6 +45,7 @@ describe("Tasks tenant isolation", () => {
       attacker,
       seedResource: async (ctx) => createTestTask(ctx.orgId, { creator_id: ctx.userId }),
       routes: ROUTES,
+      updateVerb: "PUT",
       updatePayload: { title: "Hacked" },
       createPayload: buildCreatePayload(),
       dbTable: "tasks",
