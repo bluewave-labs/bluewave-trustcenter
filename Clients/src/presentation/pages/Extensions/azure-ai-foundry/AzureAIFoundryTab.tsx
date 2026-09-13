@@ -21,6 +21,7 @@ import {
 import { RefreshCw, X, ChevronsUpDown } from "lucide-react";
 import { colors, borderRadius, chipStyles, buttonStyles, tableStyles } from "../theme";
 import { apiServices } from "../../../../infrastructure/api/networkServices";
+import useFormattedDate from "../../../../application/hooks/useFormattedDate";
 
 const SelectorVertical = (props: any) => <ChevronsUpDown size={16} {...props} />;
 
@@ -43,15 +44,6 @@ interface AzureModel {
   created_at: string;
   updated_at: string;
 }
-
-const formatDate = (dateString: string | null) => {
-  if (!dateString) return "—";
-  return new Date(dateString).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-};
 
 const DetailRow = ({ label, value }: { label: string; value: string }) => (
   <Box>
@@ -81,6 +73,7 @@ const StatCard = ({ label, value, color }: { label: string; value: number; color
 );
 
 export default function AzureAIFoundryTab() {
+  const formatDate = useFormattedDate();
   const [loading, setLoading] = useState(false);
   const [warning, setWarning] = useState<string | null>(null);
   const [selectedModel, setSelectedModel] = useState<AzureModel | null>(null);
@@ -107,8 +100,7 @@ export default function AzureAIFoundryTab() {
     try {
       const response = await apiServices.get("/extensions/azure-ai-foundry/models");
       const payload = (response.data as any)?.data as
-        | { configured?: boolean; models?: AzureModel[]; message?: string }
-        | undefined;
+        { configured?: boolean; models?: AzureModel[]; message?: string } | undefined;
       if (payload?.models) {
         setModels(payload.models);
         if (!payload.configured) {
@@ -263,7 +255,9 @@ export default function AzureAIFoundryTab() {
                   </TableCell>
                   <TableCell sx={tableStyles.cell}>{model.sku_name || "—"}</TableCell>
                   <TableCell sx={tableStyles.cell}>{model.sku_capacity ?? "—"}</TableCell>
-                  <TableCell sx={tableStyles.cell}>{formatDate(model.last_synced_at)}</TableCell>
+                  <TableCell sx={tableStyles.cell}>
+                    {formatDate(new Date(model.last_synced_at))}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -365,12 +359,26 @@ export default function AzureAIFoundryTab() {
                 )}
               </Box>
 
-              <DetailRow label="Azure created" value={formatDate(selectedModel.azure_created_at)} />
+              <DetailRow
+                label="Azure created"
+                value={
+                  selectedModel.azure_created_at
+                    ? formatDate(new Date(selectedModel.azure_created_at))
+                    : "—"
+                }
+              />
               <DetailRow
                 label="Azure modified"
-                value={formatDate(selectedModel.azure_modified_at)}
+                value={
+                  selectedModel.azure_modified_at
+                    ? formatDate(new Date(selectedModel.azure_modified_at))
+                    : "—"
+                }
               />
-              <DetailRow label="Last synced" value={formatDate(selectedModel.last_synced_at)} />
+              <DetailRow
+                label="Last synced"
+                value={formatDate(new Date(selectedModel.last_synced_at))}
+              />
             </Stack>
           </>
         )}

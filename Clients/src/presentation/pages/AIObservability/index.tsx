@@ -38,6 +38,7 @@ import {
 } from "../../themes/palette";
 import Chip from "../../components/Chip";
 import { useTraces, useObservabilityMetrics } from "../../../application/hooks/useObservability";
+import useFormattedDate from "../../../application/hooks/useFormattedDate";
 import { getTraceDetail } from "../../../application/repository/observability.repository";
 
 // Consistent card style matching AIAuditDashboard / DashboardCard
@@ -80,6 +81,7 @@ function getStatusBg(traceStatus: string | undefined): string {
 }
 
 export default function AIObservability() {
+  const formatDate = useFormattedDate();
   const [period, setPeriod] = useState("30d");
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(25);
@@ -389,7 +391,9 @@ export default function AIObservability() {
                         borderBottom: `1px solid ${borderPalette.light}`,
                       }}
                     >
-                      {row.created_at ? new Date(row.created_at).toLocaleString() : "—"}
+                      {row.created_at
+                        ? formatDate(new Date(row.created_at), { includeTime: true })
+                        : "—"}
                     </TableCell>
                     <TableCell
                       sx={{

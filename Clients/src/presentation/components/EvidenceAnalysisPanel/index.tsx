@@ -32,6 +32,7 @@ import {
   background,
 } from "../../themes/palette";
 import { getGradeColor, getGradeLabel, type QualityGrade } from "../EvidenceQualityBadge";
+import useFormattedDate from "../../../application/hooks/useFormattedDate";
 
 interface QualityScore {
   relevance: QualityGrade | null;
@@ -217,6 +218,7 @@ export default function EvidenceAnalysisPanel({
   hasLLMKey,
 }: EvidenceAnalysisPanelProps) {
   const theme = useTheme();
+  const formatDate = useFormattedDate();
 
   if (isLoading) {
     // Content shape is known (hero + 5-dimension grid), so skeleton loaders
@@ -696,7 +698,7 @@ export default function EvidenceAnalysisPanel({
       <Box sx={{ pt: "12px", borderTop: `1px solid ${borderPalette.light}` }}>
         <Typography sx={{ fontSize: 11, color: textColors.accent }}>
           Analyzed by {analysis.analysis_model} (v{analysis.analysis_version}) ·{" "}
-          {new Date(analysis.analyzed_at).toLocaleString()}
+          {formatDate(new Date(analysis.analyzed_at), { includeTime: true })}
           {auditMetadata?.analyzer_version ? ` · ${auditMetadata.analyzer_version}` : ""}
         </Typography>
       </Box>

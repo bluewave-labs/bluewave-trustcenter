@@ -21,6 +21,7 @@ import {
 import { RefreshCw, Download } from "lucide-react";
 import { VWField, VWSelect, VWToggle } from "./VWComponents";
 import { apiServices } from "../../../../infrastructure/api/networkServices";
+import useFormattedDate from "../../../../application/hooks/useFormattedDate";
 
 interface Schema {
   id: string;
@@ -55,6 +56,7 @@ interface ImportedUseCase {
 }
 
 export const JiraAssetsConfiguration: React.FC = () => {
+  const formatDate = useFormattedDate();
   const pluginApiCall = useCallback(async (method: string, path: string, body?: any) => {
     const url = `/extensions/jira-assets${path.startsWith("/") ? path : `/${path}`}`;
     let response: any;
@@ -771,7 +773,7 @@ export const JiraAssetsConfiguration: React.FC = () => {
             severity={localConfig.last_sync_status === "success" ? "success" : "warning"}
             sx={{ fontSize: "13px" }}
           >
-            Last sync: {new Date(localConfig.last_sync_at).toLocaleString()} -{" "}
+            Last sync: {formatDate(new Date(localConfig.last_sync_at), { includeTime: true })} -{" "}
             {localConfig.last_sync_status === "success"
               ? "Successful"
               : localConfig.last_sync_message}
@@ -793,7 +795,7 @@ export const JiraAssetsConfiguration: React.FC = () => {
               <Typography variant="body2" fontSize={12} color="text.secondary">
                 {importedUseCases.length} use cases imported
                 {localConfig.last_sync_at &&
-                  ` • Last sync: ${new Date(localConfig.last_sync_at).toLocaleString()}`}
+                  ` • Last sync: ${formatDate(new Date(localConfig.last_sync_at), { includeTime: true })}`}
               </Typography>
             </Box>
             <Box sx={{ display: "flex", gap: 1 }}>

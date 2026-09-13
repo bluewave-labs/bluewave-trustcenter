@@ -21,6 +21,7 @@ import {
   infoCardTitleStyle,
   infoCardbodyStyle,
 } from "../../../components/Cards/InfoCard/style";
+import useFormattedDate from "../../../../application/hooks/useFormattedDate";
 
 interface JiraData {
   id?: string;
@@ -51,19 +52,6 @@ interface JiraUseCaseOverviewProps {
     framework?: ProjectFramework[];
   } | null;
 }
-
-const formatDate = (dateStr?: string): string => {
-  if (!dateStr) return "-";
-  try {
-    return new Date(dateStr).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  } catch {
-    return dateStr;
-  }
-};
 
 const formatValue = (value: any): string => {
   if (value === null || value === undefined) return "-";
@@ -247,6 +235,7 @@ function GroupStatsCard({
 }
 
 export const JiraUseCaseOverview: React.FC<JiraUseCaseOverviewProps> = ({ project }) => {
+  const formatDate = useFormattedDate();
   const [jiraData, setJiraData] = useState<JiraData | null>(null);
   const [syncStatus, setSyncStatus] = useState<string>("synced");
   const [loading, setLoading] = useState(true);
@@ -453,12 +442,12 @@ export const JiraUseCaseOverview: React.FC<JiraUseCaseOverviewProps> = ({ projec
         <Stack className="vw-project-overview-row" sx={rowStyle}>
           <InfoCard
             title="Created in JIRA"
-            body={formatDate(jiraData?.created)}
+            body={jiraData?.created ? formatDate(new Date(jiraData.created)) : "—"}
             icon={<CalendarIcon size={16} />}
           />
           <InfoCard
             title="Last Updated in JIRA"
-            body={formatDate(jiraData?.updated)}
+            body={jiraData?.updated ? formatDate(new Date(jiraData.updated)) : "—"}
             icon={<ClockIcon size={16} />}
           />
           <InfoCard

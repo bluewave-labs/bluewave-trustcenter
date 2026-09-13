@@ -1,5 +1,9 @@
 import { vi } from "vitest";
 
+const useAuthMock = vi.fn();
+vi.mock("../../../../application/hooks/useAuth", () => ({
+  useAuth: () => useAuthMock(),
+}));
 vi.mock("../../../../application/contexts/EvalsSidebar.context", () => ({
   useEvalsSidebarContextSafe: vi.fn().mockReturnValue(null),
 }));
@@ -36,13 +40,24 @@ import { renderWithProviders } from "../../../../test/renderWithProviders";
 import { ContextSidebar } from "../index";
 
 describe("ContextSidebar", () => {
+  beforeEach(() => {
+    useAuthMock.mockReturnValue({ isSuperAdmin: false });
+  });
+
   it("renders main sidebar for main module", () => {
     renderWithProviders(<ContextSidebar activeModule="main" />);
     expect(screen.getByTestId("main-sidebar")).toBeInTheDocument();
   });
 
-  it("renders super admin sidebar for super-admin module", () => {
+  it("renders super admin sidebar for super-admin module when user is a SuperAdmin", () => {
+    useAuthMock.mockReturnValue({ isSuperAdmin: true });
     renderWithProviders(<ContextSidebar activeModule="super-admin" />);
     expect(screen.getByTestId("super-admin-sidebar")).toBeInTheDocument();
+  });
+
+  it("falls back to the main sidebar for super-admin module when user is not a SuperAdmin", () => {
+    renderWithProviders(<ContextSidebar activeModule="super-admin" />);
+    expect(screen.getByTestId("main-sidebar")).toBeInTheDocument();
+    expect(screen.queryByTestId("super-admin-sidebar")).not.toBeInTheDocument();
   });
 });

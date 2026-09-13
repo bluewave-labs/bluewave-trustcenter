@@ -37,6 +37,7 @@ import {
   DIMENSION_ORDER,
   getGradeLabel,
 } from "../../../../domain/ai-detection/riskScoringTypes";
+import useFormattedDate from "../../../../application/hooks/useFormattedDate";
 
 // ============================================================================
 // Types
@@ -338,6 +339,7 @@ export function RiskScoreCard({
   isRecalculating = false,
 }: RiskScoreCardProps) {
   const theme = useTheme();
+  const formatDate = useFormattedDate();
 
   // Not scored yet
   if (score === null || grade === null) {
@@ -396,7 +398,9 @@ export function RiskScoreCard({
         <RiskStatCard
           title="Grade"
           value={`${grade} — ${gradeLabel}`}
-          subtitle={calculatedAt ? new Date(calculatedAt).toLocaleString() : undefined}
+          subtitle={
+            calculatedAt ? formatDate(new Date(calculatedAt), { includeTime: true }) : undefined
+          }
           Icon={Award}
           valueColor={gradeColor}
         />

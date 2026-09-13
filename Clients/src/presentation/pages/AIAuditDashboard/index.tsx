@@ -49,6 +49,7 @@ import {
 import Chip from "../../components/Chip";
 import { cardStyles, tableStyles } from "../../themes/components";
 import { useAuditLog, useAuditAnalytics } from "../../../application/hooks/useAIAudit";
+import useFormattedDate from "../../../application/hooks/useFormattedDate";
 import {
   exportAuditLog,
   getActionAuditTrail,
@@ -116,6 +117,7 @@ const ACTOR_TYPE_OPTIONS = [
 
 export default function AIAuditDashboard() {
   const theme = useTheme();
+  const formatDate = useFormattedDate();
   const [period, setPeriod] = useState("30d");
   const [actorType, setActorType] = useState<string>("all");
   const [page, setPage] = useState(0);
@@ -542,7 +544,7 @@ export default function AIAuditDashboard() {
                 (logData?.rows || []).map((row: any, i: number) => (
                   <TableRow key={row.id || i} hover sx={tableStyles.bodyRow(theme)}>
                     <TableCell sx={{ ...tableStyles.bodyCell(theme), color: textColors.secondary }}>
-                      {new Date(row.created_at).toLocaleString()}
+                      {formatDate(new Date(row.created_at), { includeTime: true })}
                     </TableCell>
                     <TableCell
                       sx={{
@@ -672,7 +674,8 @@ export default function AIAuditDashboard() {
                       )}
                     </Stack>
                     <Typography sx={{ fontSize: 11, color: textColors.secondary }}>
-                      {new Date(entry.created_at).toLocaleString()} — {entry.actor_type}
+                      {formatDate(new Date(entry.created_at), { includeTime: true })} —{" "}
+                      {entry.actor_type}
                       {entry.rule_name && ` (rule: ${entry.rule_name})`}
                     </Typography>
                   </Stack>

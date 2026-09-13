@@ -41,6 +41,7 @@ import {
   modalStyles,
 } from "../theme";
 import { apiServices } from "../../../../infrastructure/api/networkServices";
+import useFormattedDate from "../../../../application/hooks/useFormattedDate";
 
 const SelectorVertical = (props: any) => <ChevronsUpDown size={16} {...props} />;
 
@@ -347,6 +348,7 @@ interface MLFlowModel {
 }
 
 export default function MLFlowTab() {
+  const formatDate = useFormattedDate();
   const [loading, setLoading] = useState(false);
   const [warning, setWarning] = useState<string | null>(null);
   const [selectedModel, setSelectedModel] = useState<MLFlowModel | null>(null);
@@ -379,8 +381,6 @@ export default function MLFlowTab() {
       experiments,
     };
   }, [mlflowData]);
-
-  const formatDate = (timestamp: number) => new Date(timestamp).toLocaleDateString();
 
   const fetchMLFlowData = async () => {
     setLoading(true);
@@ -656,10 +656,10 @@ export default function MLFlowTab() {
                             />
                           </TableCell>
                           <TableCell sx={tableStyles.cell}>
-                            {formatDate(model.creation_timestamp)}
+                            {formatDate(new Date(model.creation_timestamp))}
                           </TableCell>
                           <TableCell sx={tableStyles.cell}>
-                            {formatDate(model.last_updated_timestamp)}
+                            {formatDate(new Date(model.last_updated_timestamp))}
                           </TableCell>
                           <TableCell
                             sx={{
@@ -777,7 +777,8 @@ export default function MLFlowTab() {
                       <strong>Run ID:</strong> {selectedModel.run_id}
                     </Typography>
                     <Typography variant="body2">
-                      <strong>Created:</strong> {formatDate(selectedModel.creation_timestamp)}
+                      <strong>Created:</strong>{" "}
+                      {formatDate(new Date(selectedModel.creation_timestamp))}
                     </Typography>
                   </Box>
                 </Grid>

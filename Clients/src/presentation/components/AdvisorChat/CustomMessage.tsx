@@ -10,18 +10,8 @@ import ConfirmationToolUI from "./ConfirmationToolUI";
 import VWAvatar from "../Avatar/VWAvatar";
 import { VerifyWiseContext } from "../../../application/contexts/VerifyWise.context";
 import { useProfilePhotoFetch } from "../../../application/hooks/useProfilePhotoFetch";
+import useFormattedDate from "../../../application/hooks/useFormattedDate";
 import { User } from "../../../domain/types/User";
-
-const formatTimestamp = (date: Date): string => {
-  return date.toLocaleString(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
-  });
-};
 
 // Create markdown styles with theme. Tables follow the VerifyWise list
 // conventions (thin borders, subtle header fill, 13/12px type) so an
@@ -209,8 +199,7 @@ const DefaultToolFallback: FC<{ result?: unknown }> = ({ result }) => {
 const useAssistantTurnHasVisibleOutput = (): boolean => {
   return useAuiState(({ message }) => {
     const content = message.content as unknown as
-      | ReadonlyArray<Record<string, unknown>>
-      | undefined;
+      ReadonlyArray<Record<string, unknown>> | undefined;
     if (!content || content.length === 0) return false;
     for (const part of content) {
       if (part.type === "text" || part.type === "reasoning") {
@@ -233,6 +222,7 @@ const useAssistantTurnHasVisibleOutput = (): boolean => {
 
 const MessageTimestamp: FC = () => {
   const theme = useTheme();
+  const formatDate = useFormattedDate();
   const message = useAuiState((s) => s.message);
 
   // Skip welcome message (id: 'welcome') which is generated client-side
@@ -255,7 +245,7 @@ const MessageTimestamp: FC = () => {
         ml: 0.5,
       }}
     >
-      Answered: {formatTimestamp(new Date(message.createdAt))}
+      Answered: {formatDate(new Date(message.createdAt), { includeTime: true })}
     </Typography>
   );
 };

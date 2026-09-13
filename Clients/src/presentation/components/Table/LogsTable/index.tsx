@@ -22,6 +22,7 @@ import {
   setPaginationRowCount,
 } from "../../../../application/utils/paginationStorage";
 import { text, status } from "../../../themes/palette";
+import useFormattedDate from "../../../../application/hooks/useFormattedDate";
 
 const LOGS_TABLE_SORTING_KEY = "verifywise_logs_table_sorting";
 
@@ -137,6 +138,7 @@ const StateBadge: React.FC<{ state: string }> = ({ state }) => {
 
 const LogsTable: React.FC<LogsTableProps> = ({ data, isLoading = false, paginated = true }) => {
   const theme = useTheme();
+  const formatDate = useFormattedDate();
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(() =>
     getPaginationRowCount("logsTable", DEFAULT_ROWS_PER_PAGE),
@@ -240,20 +242,9 @@ const LogsTable: React.FC<LogsTableProps> = ({ data, isLoading = false, paginate
   }, [parsedLogs, sortConfig]);
 
   const formatTimestamp = (timestamp: string): string => {
-    try {
-      const date = new Date(timestamp);
-      if (isNaN(date.getTime())) return timestamp;
-      return date.toLocaleString(undefined, {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-      });
-    } catch {
-      return timestamp;
-    }
+    const date = new Date(timestamp);
+    if (isNaN(date.getTime())) return timestamp;
+    return formatDate(date, { includeTime: true, includeSeconds: true });
   };
 
   const tableHeader = useMemo(

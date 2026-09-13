@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "../../../../test/renderWithProviders";
@@ -120,7 +121,9 @@ describe("CommandPalette", () => {
 
   it("should render dialog when open=true", () => {
     renderWithProviders(<CommandPalette open={true} onOpenChange={mockOnOpenChange} />);
-    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    const dialog = screen.getByRole("dialog");
+    expect(dialog).toBeInTheDocument();
+    expect(dialog).toHaveAttribute("aria-modal", "true");
   });
 
   it("should not render when open=false", () => {
@@ -355,5 +358,105 @@ describe("CommandPalette", () => {
     await user.click(screen.getByText("vendor policy"));
 
     expect(mockSetQuery).toHaveBeenCalledWith("vendor policy");
+  });
+
+  describe("keyboard navigation", () => {
+    beforeEach(() => {
+      localStorage.setItem("verifywise_wise_search_welcome_dismissed", "true");
+    });
+
+    it("keeps Tab focus inside the dialog", async () => {
+      const user = userEvent.setup();
+      renderWithProviders(
+        <>
+          <button type="button">Outside</button>
+          <CommandPalette open={true} onOpenChange={mockOnOpenChange} />
+        </>,
+      );
+
+      const dialog = screen.getByRole("dialog");
+      const outside = screen.getByRole("button", { name: "Outside", hidden: true });
+
+      expect(outside.closest("[aria-hidden='true']")).not.toBeNull();
+
+      for (let i = 0; i < 12; i++) {
+        await user.tab();
+        expect(outside).not.toHaveFocus();
+        expect(dialog.contains(document.activeElement)).toBe(true);
+      }
+    });
+
+    it("returns focus to the trigger when closed with Escape", async () => {
+      const user = userEvent.setup();
+
+      function Harness() {
+        const [open, setOpen] = useState(false);
+        return (
+          <>
+            <button type="button" onClick={() => setOpen(true)}>
+              Open Wise Search
+            </button>
+            <CommandPalette open={open} onOpenChange={setOpen} />
+          </>
+        );
+      }
+
+      renderWithProviders(<Harness />);
+
+      const trigger = screen.getByRole("button", { name: "Open Wise Search" });
+      await user.click(trigger);
+
+      expect(screen.getByRole("dialog")).toBeInTheDocument();
+
+      await user.keyboard("{Escape}");
+
+      await waitFor(() => {
+        expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+      });
+      expect(trigger).toHaveFocus();
+    });
+
+    it("opens the status filter with ArrowDown and selects with Enter", async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<CommandPalette open={true} onOpenChange={mockOnOpenChange} />);
+
+      await user.click(screen.getByLabelText("Filter by review status"));
+
+      expect(
+        await screen.findByRole("listbox", { name: "Review status options" }),
+      ).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByRole("option", { name: "All statuses" })).toHaveFocus();
+      });
+
+      await user.keyboard("{ArrowDown}");
+      await waitFor(() => {
+        expect(screen.getByRole("option", { name: "Draft" })).toHaveFocus();
+      });
+      await user.keyboard("{Enter}");
+
+      expect(mockSetReviewStatus).toHaveBeenCalledWith("draft");
+    });
+
+    it("closes the status filter with Escape without closing the palette", async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<CommandPalette open={true} onOpenChange={mockOnOpenChange} />);
+
+      await user.click(screen.getByLabelText("Filter by review status"));
+      expect(
+        await screen.findByRole("listbox", { name: "Review status options" }),
+      ).toBeInTheDocument();
+
+      await user.keyboard("{Escape}");
+
+      await waitFor(() => {
+        expect(
+          screen.queryByRole("listbox", { name: "Review status options" }),
+        ).not.toBeInTheDocument();
+      });
+      expect(screen.getByRole("dialog")).toBeInTheDocument();
+      expect(mockOnOpenChange).not.toHaveBeenCalledWith(false);
+      expect(screen.getByLabelText("Filter by review status")).toHaveFocus();
+    });
   });
 });

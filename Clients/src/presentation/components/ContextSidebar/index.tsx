@@ -1,5 +1,6 @@
 import { useLocation, useNavigate } from "react-router";
 import { AppModule } from "../../../application/redux/ui/uiSlice";
+import { useAuth } from "../../../application/hooks/useAuth";
 import { useEvalsSidebarContextSafe } from "../../../application/contexts/EvalsSidebar.context";
 import { useAIDetectionSidebarContextSafe } from "../../../application/contexts/AIDetectionSidebar.context";
 import { useShadowAISidebarContextSafe } from "../../../application/contexts/ShadowAISidebar.context";
@@ -47,6 +48,7 @@ export function ContextSidebar({
   const aiTrustIndexSidebarContext = useAITrustIndexSidebarContextSafe();
   const location = useLocation();
   const navigate = useNavigate();
+  const { isSuperAdmin } = useAuth();
 
   // Get active tab from URL hash for evals
   const activeTab = location.hash.replace("#", "") || "overview";
@@ -224,7 +226,18 @@ export function ContextSidebar({
       );
     }
     case "super-admin":
-      return <SuperAdminSidebar />;
+      return isSuperAdmin ? (
+        <SuperAdminSidebar />
+      ) : (
+        <Sidebar
+          onOpenCreateDemoData={onOpenCreateDemoData}
+          onOpenDeleteDemoData={onOpenDeleteDemoData}
+          onDismissDemoDataButton={onDismissDemoDataButton}
+          showDemoDataButton={showDemoDataButton}
+          hasDemoData={hasDemoData}
+          isAdmin={isAdmin}
+        />
+      );
     default:
       return (
         <Sidebar

@@ -9,6 +9,7 @@ import RunDetailDrawer from "./RunDetailDrawer";
 import palette from "../../../themes/palette";
 import { CustomizableButton } from "../../../components/button/customizable-button";
 import CustomizableSkeleton from "../../../components/Skeletons";
+import useFormattedDate from "../../../../application/hooks/useFormattedDate";
 
 interface RunRow {
   agent_run_id: string;
@@ -34,6 +35,7 @@ const COLUMNS: MCPTableColumn[] = [
 ];
 
 export default function MCPRuns() {
+  const formatDate = useFormattedDate();
   const [rows, setRows] = useState<RunRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -94,7 +96,7 @@ export default function MCPRuns() {
               renderRow={(r) => [
                 r.agent_run_id.slice(0, 12) + "…",
                 r.agent_key_name ?? "—",
-                new Date(r.started_at).toLocaleString(),
+                formatDate(new Date(r.started_at), { includeTime: true }),
                 r.model_count,
                 r.tool_count,
                 r.denied_count || "—",

@@ -75,6 +75,11 @@ export const tenantIsolationRegistry: IsolationEntity[] = [
     updateVerb: "PUT",
   }),
   {
+    name: "ai_incidents",
+    tables: ["ai_incident_managements"],
+    baseRoute: "/api/ai-incident-managements",
+  },
+  {
     name: "vendors",
     tables: ["vendors", "vendors_projects"],
     baseRoute: "/api/vendors",
@@ -98,6 +103,11 @@ export const tenantIsolationRegistry: IsolationEntity[] = [
     name: "evidence_hub",
     tables: ["evidence_hub"],
     baseRoute: "/api/evidenceHub",
+  },
+  {
+    name: "evidence_hub_org_settings",
+    tables: ["evidence_hub_org_settings"],
+    baseRoute: "/api/evidenceHub/settings",
   },
   {
     name: "audit_ledger",

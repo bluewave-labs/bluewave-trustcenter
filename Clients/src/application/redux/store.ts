@@ -36,7 +36,7 @@ checkVersionAndClearIfNeeded();
 const persistConfig = {
   key: "root",
   storage,
-  whitelist: ["auth", "ui"], // Persist both auth and ui state
+  whitelist: ["auth"],
 };
 
 const rootReducer = combineReducers({

@@ -106,7 +106,11 @@ jobs:
       - name: Audit EvaluationModule dependencies (pip-audit)
         run: |
           .venv/bin/python -m pip install pip-audit
-          .venv/bin/python -m pip_audit -r requirements.txt
+          # CVE-2026-81726 (GHSA-8mgp-746c-j5xp / PYSEC-2026-3740): nltk model-artifact APIs bypass
+          # pathsec sandbox. Unfixed upstream — 3.10.3 (latest) is still marked last_affected. We pin
+          # nltk>=3.10.3 in requirements.txt and suppress until a patched release exists.
+          # TODO: remove --ignore-vuln once nltk ships a fix (see nltk/nltk#3813).
+          .venv/bin/python -m pip_audit -r requirements.txt --ignore-vuln PYSEC-2026-3740
 
       - name: Install EvaluationModule test mocks
         run: .venv/bin/python -m pip install respx

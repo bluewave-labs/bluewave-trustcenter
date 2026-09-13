@@ -44,6 +44,15 @@ AVD-KSV-0021
 # containers, RuntimeDefault seccomp, automountServiceAccountToken: false.
 AVD-KSV-0022
 
+# AVD-KSV-0106 (LOW) — container capabilities must only include NET_BIND_SERVICE.
+# Accepted for the nginx frontend container: the nginx-unprivileged entrypoint
+# requires CHOWN/SETUID/SETGID/DAC_OVERRIDE (in addition to NET_BIND_SERVICE)
+# to chown its cache dirs and drop from root to uid 101 before binding port 80.
+# Removing any of these makes the container crash on startup. Full justification
+# is documented inline in kubernetes/frontend-deployment.yaml and
+# kubernetes/helm/verifywise/templates/frontend-deployment.yaml.
+AVD-KSV-0106
+
 # AVD-KSV-0014 (HIGH) — container should set readOnlyRootFilesystem: true.
 # Accepted for now: several containers in these manifests genuinely require a
 # writable root filesystem and enabling this would break them at runtime —

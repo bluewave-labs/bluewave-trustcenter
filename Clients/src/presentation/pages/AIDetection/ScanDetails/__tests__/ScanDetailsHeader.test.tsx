@@ -1,4 +1,5 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { screen, fireEvent } from "@testing-library/react";
+import { renderWithProviders } from "../../../../../test/renderWithProviders";
 import { ScanDetailsHeader } from "../ScanDetailsHeader";
 import type { ScanResponse, Scan } from "../../../../../domain/ai-detection/types";
 
@@ -32,7 +33,7 @@ function makeScanResponse(overrides: Partial<Scan> = {}): ScanResponse {
 describe("ScanDetailsHeader", () => {
   it("renders the repository name and back button", () => {
     const onBack = vi.fn();
-    render(
+    renderWithProviders(
       <ScanDetailsHeader
         scan={makeScanResponse()}
         onBack={onBack}
@@ -49,7 +50,7 @@ describe("ScanDetailsHeader", () => {
   });
 
   it("formats duration in minutes and seconds", () => {
-    render(
+    renderWithProviders(
       <ScanDetailsHeader
         scan={makeScanResponse({ duration_ms: 125000 })}
         onBack={vi.fn()}
@@ -64,7 +65,7 @@ describe("ScanDetailsHeader", () => {
   });
 
   it("formats duration in milliseconds when under 1 second", () => {
-    render(
+    renderWithProviders(
       <ScanDetailsHeader
         scan={makeScanResponse({ duration_ms: 500 })}
         onBack={vi.fn()}
@@ -79,7 +80,7 @@ describe("ScanDetailsHeader", () => {
   });
 
   it("shows a dash when duration is missing", () => {
-    render(
+    renderWithProviders(
       <ScanDetailsHeader
         scan={makeScanResponse({ duration_ms: undefined })}
         onBack={vi.fn()}
@@ -94,7 +95,7 @@ describe("ScanDetailsHeader", () => {
   });
 
   it("shows a Failed chip and error banner for failed scans", () => {
-    render(
+    renderWithProviders(
       <ScanDetailsHeader
         scan={makeScanResponse({ status: "failed", error_message: "Clone failed: timeout" })}
         onBack={vi.fn()}
@@ -111,7 +112,7 @@ describe("ScanDetailsHeader", () => {
   });
 
   it("shows an Incremental chip and changed files count for incremental scans", () => {
-    render(
+    renderWithProviders(
       <ScanDetailsHeader
         scan={makeScanResponse({ scan_mode: "incremental", changed_files_count: 7 })}
         onBack={vi.fn()}
@@ -130,7 +131,7 @@ describe("ScanDetailsHeader", () => {
     const onRecalculate = vi.fn();
     const onExport = vi.fn();
 
-    render(
+    renderWithProviders(
       <ScanDetailsHeader
         scan={makeScanResponse({ status: "completed" })}
         onBack={vi.fn()}
@@ -149,7 +150,7 @@ describe("ScanDetailsHeader", () => {
   });
 
   it("does not show action buttons for non-completed scans", () => {
-    render(
+    renderWithProviders(
       <ScanDetailsHeader
         scan={makeScanResponse({ status: "scanning" })}
         onBack={vi.fn()}
@@ -165,7 +166,7 @@ describe("ScanDetailsHeader", () => {
   });
 
   it("renders the RiskScoreCard for completed scans with a score", () => {
-    render(
+    renderWithProviders(
       <ScanDetailsHeader
         scan={makeScanResponse({ status: "completed", risk_score: 90, risk_score_grade: "A" })}
         onBack={vi.fn()}
@@ -180,7 +181,7 @@ describe("ScanDetailsHeader", () => {
   });
 
   it("does not render the RiskScoreCard for non-completed scans", () => {
-    render(
+    renderWithProviders(
       <ScanDetailsHeader
         scan={makeScanResponse({ status: "cancelled" })}
         onBack={vi.fn()}

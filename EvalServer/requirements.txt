@@ -24,7 +24,7 @@ frozenlist==1.8.0
 fsspec==2025.10.0
 google-api-core==2.34.0
 google-api-python-client==2.186.0
-google-auth==2.57.0
+google-auth==2.57.1
 google-auth-httplib2==0.2.1
 google-genai==1.48.0
 googleapis-common-protos==1.71.0
@@ -32,7 +32,7 @@ greenlet==3.2.4
 grpcio==1.83.0
 grpcio-status==1.83.0
 h11==0.16.0
-hf-xet==1.5.2
+hf-xet==1.6.0
 httpcore==1.0.9
 httplib2==0.32.0
 httptools==0.7.1
@@ -60,10 +60,10 @@ packaging==25.0
 pandas==2.3.3
 passlib==1.7.4
 portalocker==4.2.0
-posthog==7.35.0
+posthog==7.45.3
 prompt-toolkit==3.0.52
 propcache==0.4.1
-proto-plus==1.28.3
+proto-plus==1.28.4
 protobuf==6.33.5
 psycopg2-binary==2.9.11
 pyasn1==0.6.4

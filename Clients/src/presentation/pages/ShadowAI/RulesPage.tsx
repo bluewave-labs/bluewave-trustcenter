@@ -42,6 +42,7 @@ import {
   getAlertHistory,
 } from "../../../application/repository/shadowAi.repository";
 import { useAuth } from "../../../application/hooks/useAuth";
+import useFormattedDate from "../../../application/hooks/useFormattedDate";
 import {
   IShadowAiRule,
   IShadowAiAlertHistory,
@@ -94,6 +95,7 @@ const BASE_TABS = [
 export default function RulesPage() {
   const location = useLocation();
   const navigate = useNavigate();
+  const formatDate = useFormattedDate();
 
   const viewMode: ViewMode = location.pathname.includes("/rules/alerts") ? "history" : "rules";
 
@@ -560,7 +562,7 @@ export default function RulesPage() {
                       />
                     </TableCell>
                     <TableCell sx={singleTheme.tableStyles.primary.body.cell}>
-                      {a.fired_at ? new Date(a.fired_at).toLocaleString() : "—"}
+                      {a.fired_at ? formatDate(new Date(a.fired_at), { includeTime: true }) : "—"}
                     </TableCell>
                   </TableRow>
                 ))}

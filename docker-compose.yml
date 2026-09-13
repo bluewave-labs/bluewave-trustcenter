@@ -9,6 +9,7 @@ services:
       - POSTGRES_USER=$DB_USER
       - POSTGRES_PASSWORD=${DB_PASSWORD:?DB_PASSWORD must be set in the env file before starting}
       - POSTGRES_DB=$DB_NAME
+    restart: unless-stopped
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "$DB_USER", "-d", "$DB_NAME"]
       interval: 5s
@@ -55,11 +56,13 @@ services:
       - EVAL_SERVER_INTERNAL_KEY=${EVAL_SERVER_INTERNAL_KEY:?EVAL_SERVER_INTERNAL_KEY must be set in the env file before starting}
       - SUPERADMIN_EMAIL=$SUPERADMIN_EMAIL
       - SUPERADMIN_PASSWORD=${SUPERADMIN_PASSWORD:?SUPERADMIN_PASSWORD must be set in the env file before starting}
+    restart: unless-stopped
   frontend:
     depends_on:
       - backend
     image: ghcr.io/verifywise-ai/verifywise-frontend:latest
     pull_policy: always
+    restart: unless-stopped
   worker:
     depends_on:
       postgresdb:
@@ -101,6 +104,7 @@ services:
       - AI_GATEWAY_URL=http://ai_gateway:8100
       - AI_GATEWAY_INTERNAL_KEY=${AI_GATEWAY_INTERNAL_KEY:?AI_GATEWAY_INTERNAL_KEY must be set in the env file before starting}
       - EVAL_SERVER_INTERNAL_KEY=${EVAL_SERVER_INTERNAL_KEY:?EVAL_SERVER_INTERNAL_KEY must be set in the env file before starting}
+    restart: unless-stopped
   ai_gateway:
     depends_on:
       postgresdb:

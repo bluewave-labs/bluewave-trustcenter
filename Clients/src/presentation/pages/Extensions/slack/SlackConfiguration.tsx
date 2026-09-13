@@ -22,6 +22,7 @@ import {
 import { SlidersHorizontal, Trash2, ToggleLeft, ToggleRight, MessageSquare, X } from "lucide-react";
 import { apiServices } from "../../../../infrastructure/api/networkServices";
 import { ENV_VARs } from "../../../../../env.vars";
+import useFormattedDate from "../../../../application/hooks/useFormattedDate";
 
 const colors = {
   primary: "#13715B",
@@ -73,6 +74,7 @@ interface SlackWorkspace {
 }
 
 export default function SlackConfiguration() {
+  const formatDate = useFormattedDate();
   const [slackWorkspaces, setSlackWorkspaces] = useState<SlackWorkspace[]>([]);
   const [loadingWorkspaces, setLoadingWorkspaces] = useState(false);
   const [globalRoutingTypes, setGlobalRoutingTypes] = useState<string[]>([]);
@@ -247,9 +249,7 @@ export default function SlackConfiguration() {
                       <TableCell sx={{ ...tableStyles.cell }}>{workspace.team_name}</TableCell>
                       <TableCell sx={{ ...tableStyles.cell }}>#{workspace.channel}</TableCell>
                       <TableCell sx={{ ...tableStyles.cell }}>
-                        {workspace.created_at
-                          ? new Date(workspace.created_at).toLocaleDateString()
-                          : "-"}
+                        {workspace.created_at ? formatDate(new Date(workspace.created_at)) : "—"}
                       </TableCell>
                       <TableCell sx={{ ...tableStyles.cell }}>
                         <Box

@@ -55,7 +55,7 @@ describe("useCommandPalette", () => {
     expect(result.current.isOpen).toBe(true);
   });
 
-  it("closes on Escape when open", () => {
+  it("does not close on Escape (the overlay owns dismiss)", () => {
     const { result } = renderHook(() => useCommandPalette());
 
     act(() => {
@@ -65,7 +65,7 @@ describe("useCommandPalette", () => {
       document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
     });
 
-    expect(result.current.isOpen).toBe(false);
+    expect(result.current.isOpen).toBe(true);
   });
 
   it("toggles on Ctrl+K", () => {

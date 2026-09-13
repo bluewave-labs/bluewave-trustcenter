@@ -7,7 +7,7 @@ jest.mock("../jwt.utils", () => ({
   THIRTY_DAYS_MS: 30 * 24 * 3600 * 1000,
 }));
 jest.mock("../refreshToken.utils", () => ({
-  storeRefreshToken: jest.fn<any>().mockResolvedValue(undefined),
+  storeRefreshToken: jest.fn<(...args: any[]) => Promise<void>>().mockResolvedValue(undefined),
 }));
 
 import { generateUserTokens } from "../auth.utils";

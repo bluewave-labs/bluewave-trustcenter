@@ -16,7 +16,12 @@ import { useTheme } from "@mui/material/styles";
 import { History, ChevronDown, ChevronUp, ChevronRight } from "lucide-react";
 import Chip from "../../../components/Chip";
 import { friaRepository } from "../../../../application/repository/fria.repository";
+import useFormattedDate from "../../../../application/hooks/useFormattedDate";
 import { brand } from "../../../themes/palette";
+
+// The diff helpers below are pure, so the preference-aware formatter is passed
+// in rather than read from a hook they cannot call.
+type DateFormatter = ReturnType<typeof useFormattedDate>;
 
 interface FriaVersionSnapshot {
   id: number;
@@ -97,19 +102,14 @@ const SKIP_FIELDS = new Set([
 // Fields that contain ISO date strings
 const DATE_FIELDS = new Set(["assessment_date", "first_use_date"]);
 
-function formatDateValue(iso: string): string {
-  const d = new Date(iso);
-  if (isNaN(d.getTime())) return iso;
-  return `${d.getDate()} ${d.toLocaleString("en-GB", { month: "short" })} ${d.getFullYear()}`;
-}
-
-function formatValue(value: unknown, fieldKey?: string): string {
+function formatValue(value: unknown, formatDate: DateFormatter, fieldKey?: string): string {
   if (value === null || value === undefined || value === "") return "—";
   if (Array.isArray(value)) return value.length === 0 ? "—" : value.join(", ");
   if (typeof value === "object") return JSON.stringify(value);
   const str = String(value);
   if (fieldKey && DATE_FIELDS.has(fieldKey) && str.includes("T")) {
-    return formatDateValue(str);
+    const parsed = new Date(str);
+    return isNaN(parsed.getTime()) ? str : formatDate(parsed);
   }
   return str;
 }
@@ -117,6 +117,7 @@ function formatValue(value: unknown, fieldKey?: string): string {
 function computeDiffs(
   oldAssessment: Record<string, unknown> | null,
   newAssessment: Record<string, unknown>,
+  formatDate: DateFormatter,
 ): FieldDiff[] {
   const diffs: FieldDiff[] = [];
 
@@ -124,8 +125,8 @@ function computeDiffs(
     if (SKIP_FIELDS.has(key)) continue;
 
     const oldVal = oldAssessment ? oldAssessment[key] : undefined;
-    const oldStr = formatValue(oldVal, key);
-    const newStr = formatValue(newVal, key);
+    const oldStr = formatValue(oldVal, formatDate, key);
+    const newStr = formatValue(newVal, formatDate, key);
 
     if (oldStr === newStr) continue;
 
@@ -155,8 +156,7 @@ function computeRightsDiffs(
     const key = newRight.right_key as string;
     const title = (newRight.right_title as string) || key;
     const oldRight = oldRights?.find((r) => r.right_key === key) as
-      | Record<string, unknown>
-      | undefined;
+      Record<string, unknown> | undefined;
 
     const newFlagged = Boolean(newRight.flagged);
     const oldFlagged = oldRight ? Boolean(oldRight.flagged) : false;
@@ -187,23 +187,13 @@ function computeRightsDiffs(
   return diffs;
 }
 
-function formatTimestamp(iso: string): string {
-  const d = new Date(iso);
-  if (isNaN(d.getTime())) return iso;
-  const day = d.getDate();
-  const month = d.toLocaleString("en-GB", { month: "short" });
-  const year = d.getFullYear();
-  const hh = String(d.getHours()).padStart(2, "0");
-  const mm = String(d.getMinutes()).padStart(2, "0");
-  return `${day} ${month} ${year}, ${hh}:${mm}`;
-}
-
 const FriaVersionHistory = ({
   friaId,
   currentVersion,
   inline = false,
 }: FriaVersionHistoryProps) => {
   const theme = useTheme();
+  const formatDate = useFormattedDate();
 
   const [panelOpen, setPanelOpen] = useState(false);
   const [expandedRow, setExpandedRow] = useState<number | null>(null);
@@ -247,13 +237,12 @@ const FriaVersionHistory = ({
 
     const previousAssessment =
       (previousSnapshot?.snapshot_data?.assessment as Record<string, unknown> | null) ?? null;
-    const assessmentDiffs = computeDiffs(previousAssessment, assessment);
+    const assessmentDiffs = computeDiffs(previousAssessment, assessment, formatDate);
 
     // Rights diffs
     const newRights = (snapshot.snapshot_data.rights || []) as Record<string, unknown>[];
     const oldRights = (previousSnapshot?.snapshot_data?.rights || null) as
-      | Record<string, unknown>[]
-      | null;
+      Record<string, unknown>[] | null;
     const rightsDiffs = computeRightsDiffs(oldRights, newRights);
 
     // Risk items count change
@@ -519,7 +508,9 @@ const FriaVersionHistory = ({
                         padding: "10px 16px",
                       }}
                     >
-                      {v.created_at ? formatTimestamp(v.created_at) : "—"}
+                      {v.created_at
+                        ? formatDate(new Date(v.created_at), { includeTime: true })
+                        : "—"}
                     </TableCell>
                     <TableCell sx={{ width: 36, padding: "10px 8px", textAlign: "center" }}>
                       {v.snapshot_data && (

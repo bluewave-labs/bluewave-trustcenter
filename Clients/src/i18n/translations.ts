@@ -115,6 +115,8 @@ export const translations: Record<string, Record<string, string>> = {
     "Alert settings saved": "Benachrichtigungseinstellungen gespeichert",
     "Failed to save alert settings":
       "Benachrichtigungseinstellungen konnten nicht gespeichert werden",
+    "Failed to save evidence retention settings":
+      "Aufbewahrungseinstellungen für Nachweise konnten nicht gespeichert werden",
     "Notifications are delivered in-app, and by email when email alerts are enabled. A threshold set to notify and flag for revalidation also marks the model as due for a fresh validation.":
       "Benachrichtigungen werden in der App zugestellt und per E-Mail, wenn E-Mail-Benachrichtigungen aktiviert sind. Ein Schwellenwert mit Benachrichtigung und Revalidierungs-Kennzeichnung markiert das Modell zusätzlich als fällig für eine neue Validierung.",
     "A finding must be verified before it can be closed.":
@@ -541,6 +543,8 @@ export const translations: Record<string, Record<string, string>> = {
     "Evidence": "Nachweise",
     "Evidence hub": "Nachweiszentrale",
     "Evidence Hub": "Nachweiszentrale",
+    "Evidence Hub retention": "Nachweiszentrale-Aufbewahrung",
+    "Evidence retention settings saved": "Aufbewahrungseinstellungen für Nachweise gespeichert",
     "Reporting": "Berichte",
     "AI trust center": "KI-Vertrauenszentrum",
     "GOVERNANCE": "GOVERNANCE",
@@ -726,6 +730,7 @@ export const translations: Record<string, Record<string, string>> = {
     "Public": "Öffentlich",
     "Published": "Veröffentlicht",
     "Restricted": "Eingeschränkt",
+    "Retired": "Stillgelegt",
     "Resolved": "Gelöst",
     "Reviewed": "Geprüft",
     "Skipped": "Übersprungen",
@@ -786,6 +791,7 @@ export const translations: Record<string, Record<string, string>> = {
     "DATE UPDATED": "AKTUALISIERUNGSDATUM",
     "Due date": "Fälligkeitsdatum",
     "Due today": "Heute fällig",
+    "No default": "Kein Standard",
     "No due date": "Kein Fälligkeitsdatum",
     "Expiry": "Ablauf",
     "EXPIRY": "ABLAUF",
@@ -1163,6 +1169,9 @@ export const translations: Record<string, Record<string, string>> = {
     "AI project": "KI-Projekt",
     "AI Project": "KI-Projekt",
     "AI PROJECT": "KI-PROJEKT",
+    "Affected model": "Betroffenes Modell",
+    "AFFECTED MODEL": "BETROFFENES MODELL",
+    "Select model from inventory": "Modell aus dem Inventar auswählen",
     "Project": "Projekt",
     "Create a new use case by filling in the following details":
       "Erstellen Sie einen neuen Anwendungsfall, indem Sie die folgenden Angaben ausfüllen",
@@ -1447,6 +1456,7 @@ export const translations: Record<string, Record<string, string>> = {
     "Create use case": "Anwendungsfall erstellen",
     "Default TTL (seconds)": "Standard-TTL (Sekunden)",
     "Default branch": "Standard-Branch",
+    "Default retention period": "Standard-Aufbewahrungsfrist",
     "Departments (comma-separated)": "Abteilungen (kommagetrennt)",
     "Describe the products or services this vendor delivers (e.g., cloud hosting, legal advisory, AI APIs).":
       "Beschreiben Sie die Produkte oder Dienstleistungen, die dieser Anbieter liefert (z. B. Cloud-Hosting, Rechtsberatung, KI-APIs).",
@@ -1608,6 +1618,11 @@ export const translations: Record<string, Record<string, string>> = {
     "Approve": "Genehmigen",
     "Archive": "Archivieren",
     "Archive form": "Formular archivieren",
+    "Applied to new evidence that has no explicit expiry date or retention policy of its own. A daily job flags records past their expiry date and notifies the reviewer or organization admins.":
+      "Wird auf neue Nachweise angewendet, die weder ein explizites Ablaufdatum noch eine eigene Aufbewahrungsfrist haben. Ein täglicher Job markiert Datensätze nach Ablauf und benachrichtigt den Prüfer oder die Administratoren der Organisation.",
+    "Archive expired evidence": "Abgelaufene Nachweise archivieren",
+    "Archived evidence is hidden from the Evidence Hub list but never deleted. Archival also requires the server flag EVIDENCE_RETENTION_ARCHIVE_ENABLED.":
+      "Archivierte Nachweise werden in der Nachweiszentrale-Liste ausgeblendet, aber nie gelöscht. Die Archivierung erfordert zusätzlich das Server-Flag EVIDENCE_RETENTION_ARCHIVE_ENABLED.",
     "Back to history": "Zurück zum Verlauf",
     "Back to prompts": "Zurück zu Prompts",
     "Click to upload": "Zum Hochladen klicken",
@@ -1830,6 +1845,7 @@ export const translations: Record<string, Record<string, string>> = {
     "Run first experiment": "Erstes Experiment ausführen",
     "Run your first experiment": "Ihr erstes Experiment ausführen",
     "Save changes": "Änderungen speichern",
+    "Save retention settings": "Aufbewahrungseinstellungen speichern",
     "Save Changes": "Änderungen speichern",
     "Save configuration": "Konfiguration speichern",
     "Save dataset": "Datensatz speichern",
@@ -6325,6 +6341,7 @@ export const translations: Record<string, Record<string, string>> = {
     "Experimental research only, not deployed to users":
       "Nur experimentelle Forschung, nicht für Nutzer bereitgestellt",
     "Expired": "Abgelaufen",
+    "Expiring soon": "Läuft bald ab",
     "Expires": "Läuft ab",
     "Explain AI models to ensure responsible use and maintain an AI systems repository.":
       "Erklären Sie KI-Modelle, um eine verantwortungsvolle Nutzung sicherzustellen, und pflegen Sie ein Repository für KI-Systeme.",
@@ -9251,26 +9268,6 @@ export const translations: Record<string, Record<string, string>> = {
     "View lifecycle": "Lebenszyklus anzeigen",
     "Workspace disconnected successfully!": "Workspace erfolgreich getrennt!",
     "Workspace status updated successfully!": "Workspace-Status erfolgreich aktualisiert!",
-    // AI Advisor roadmap
-    "AI Advisor roadmap": "KI-Berater-Roadmap",
-    "All domains": "Alle Domänen",
-    "All kinds": "Alle Typen",
-    "All phases": "Alle Phasen",
-    "Failed to load the advisor tools roadmap. Please try again.":
-      "Die Advisor-Tool-Roadmap konnte nicht geladen werden. Bitte versuchen Sie es erneut.",
-    "Implemented under a different name": "Unter einem anderen Namen implementiert",
-    "No tools match your search or filter criteria.":
-      "Keine Tools entsprechen Ihren Such- oder Filterkriterien.",
-    "Overall progress": "Gesamtfortschritt",
-    "Planned tools": "Geplante Tools",
-    "Planned vs. implemented AI Advisor tools from the AI Implementation Plan.":
-      "Geplante vs. implementierte KI-Berater-Tools aus dem KI-Implementierungsplan.",
-    "Progress by domain": "Fortschritt nach Domäne",
-    "Progress by phase": "Fortschritt nach Phase",
-    "Read": "Lesen",
-    "Renamed": "Umbenannt",
-    "Search tools": "Tools suchen",
-    "Write": "Schreiben",
   },
 
   fr: {
@@ -9363,6 +9360,8 @@ export const translations: Record<string, Record<string, string>> = {
     "Save alert settings": "Enregistrer les paramètres d'alerte",
     "Alert settings saved": "Paramètres d'alerte enregistrés",
     "Failed to save alert settings": "Échec de l'enregistrement des paramètres d'alerte",
+    "Failed to save evidence retention settings":
+      "Échec de l'enregistrement des paramètres de conservation des preuves",
     "Notifications are delivered in-app, and by email when email alerts are enabled. A threshold set to notify and flag for revalidation also marks the model as due for a fresh validation.":
       "Les notifications sont envoyées dans l'application, et par e-mail lorsque les alertes par e-mail sont activées. Un seuil configuré pour notifier et signaler une revalidation marque également le modèle comme devant faire l'objet d'une nouvelle validation.",
     "A finding must be verified before it can be closed.":
@@ -9790,6 +9789,8 @@ export const translations: Record<string, Record<string, string>> = {
     "Evidence": "Preuves",
     "Evidence hub": "Centre de preuves",
     "Evidence Hub": "Centre de preuves",
+    "Evidence Hub retention": "Conservation du Centre de preuves",
+    "Evidence retention settings saved": "Paramètres de conservation des preuves enregistrés",
     "Reporting": "Rapports",
     "AI trust center": "Centre de confiance IA",
     "GOVERNANCE": "GOUVERNANCE",
@@ -9961,6 +9962,7 @@ export const translations: Record<string, Record<string, string>> = {
     "Public": "Public",
     "Published": "Publié",
     "Restricted": "Restreint",
+    "Retired": "Retiré",
     "Resolved": "Résolu",
     "Reviewed": "Examiné",
     "Skipped": "Passé",
@@ -10014,6 +10016,7 @@ export const translations: Record<string, Record<string, string>> = {
     "Date": "Date",
     "Due date": "Date d'échéance",
     "Due today": "Dû aujourd'hui",
+    "No default": "Aucune valeur par défaut",
     "No due date": "Aucune échéance",
     "Expiry": "Expiration",
     "Expiry date": "Date d'expiration",
@@ -10619,6 +10622,9 @@ export const translations: Record<string, Record<string, string>> = {
     "Deadline view": "Vue des échéances",
     "Operations view": "Vue opérationnelle",
     "AI PROJECT": "PROJET IA",
+    "Affected model": "Modèle affecté",
+    "AFFECTED MODEL": "MODÈLE AFFECTÉ",
+    "Select model from inventory": "Sélectionner un modèle dans l'inventaire",
     "How deadlines work": "Comment fonctionnent les échéances",
     "Open any task and set a due date. It will automatically appear in the correct deadline group on this view.":
       "Ouvrez une tâche et définissez une date d'échéance. Elle apparaîtra automatiquement dans le bon groupe d'échéance sur cette vue.",
@@ -10843,6 +10849,7 @@ export const translations: Record<string, Record<string, string>> = {
     "Create use case": "Créer un cas d'usage",
     "Default TTL (seconds)": "TTL par défaut (secondes)",
     "Default branch": "Branche par défaut",
+    "Default retention period": "Période de conservation par défaut",
     "Departments (comma-separated)": "Départements (séparés par des virgules)",
     "Describe the products or services this vendor delivers (e.g., cloud hosting, legal advisory, AI APIs).":
       "Décrivez les produits ou services fournis par ce fournisseur (ex. hébergement cloud, conseil juridique, API IA).",
@@ -10998,6 +11005,11 @@ export const translations: Record<string, Record<string, string>> = {
     "Add to risk register": "Ajouter au registre des risques",
     "Add your first prompt": "Ajouter votre premier prompt",
     "Archive form": "Archiver le formulaire",
+    "Applied to new evidence that has no explicit expiry date or retention policy of its own. A daily job flags records past their expiry date and notifies the reviewer or organization admins.":
+      "Appliqué aux nouvelles preuves sans date d'expiration explicite ni politique de conservation propre. Une tâche quotidienne marque les enregistrements expirés et avertit le réviseur ou les administrateurs de l'organisation.",
+    "Archive expired evidence": "Archiver les preuves expirées",
+    "Archived evidence is hidden from the Evidence Hub list but never deleted. Archival also requires the server flag EVIDENCE_RETENTION_ARCHIVE_ENABLED.":
+      "Les preuves archivées sont masquées de la liste du Centre de preuves mais ne sont jamais supprimées. L'archivage nécessite également le flag serveur EVIDENCE_RETENTION_ARCHIVE_ENABLED.",
     "Back to history": "Retour à l'historique",
     "Back to prompts": "Retour aux prompts",
     "Click to upload": "Cliquer pour téléverser",
@@ -11207,6 +11219,7 @@ export const translations: Record<string, Record<string, string>> = {
     "Run first experiment": "Lancer la première expérience",
     "Run your first experiment": "Lancez votre première expérience",
     "Save changes": "Enregistrer les modifications",
+    "Save retention settings": "Enregistrer les paramètres de conservation",
     "Save Changes": "Enregistrer les modifications",
     "Save configuration": "Enregistrer la configuration",
     "Save dataset": "Enregistrer le jeu de données",
@@ -15522,6 +15535,7 @@ export const translations: Record<string, Record<string, string>> = {
     "Experimental research only, not deployed to users":
       "Recherche expérimentale uniquement, non déployé aux utilisateurs",
     "Expired": "Expiré",
+    "Expiring soon": "Expire bientôt",
     "Expires": "Expire",
     "Explain AI models to ensure responsible use and maintain an AI systems repository.":
       "Expliquez les modèles IA pour assurer une utilisation responsable et maintenez un référentiel des systèmes IA.",
@@ -18452,26 +18466,6 @@ export const translations: Record<string, Record<string, string>> = {
     "Workspace disconnected successfully!": "Espace de travail déconnecté avec succès !",
     "Workspace status updated successfully!":
       "Statut de l'espace de travail mis à jour avec succès !",
-    // AI Advisor roadmap
-    "AI Advisor roadmap": "Feuille de route du conseiller IA",
-    "All domains": "Tous les domaines",
-    "All kinds": "Tous les types",
-    "All phases": "Toutes les phases",
-    "Failed to load the advisor tools roadmap. Please try again.":
-      "Échec du chargement de la feuille de route des outils du conseiller. Veuillez réessayer.",
-    "Implemented under a different name": "Implémenté sous un nom différent",
-    "No tools match your search or filter criteria.":
-      "Aucun outil ne correspond à vos critères de recherche ou de filtrage.",
-    "Overall progress": "Progression globale",
-    "Planned tools": "Outils planifiés",
-    "Planned vs. implemented AI Advisor tools from the AI Implementation Plan.":
-      "Outils du conseiller IA planifiés vs implémentés, issus du plan d'implémentation IA.",
-    "Progress by domain": "Progression par domaine",
-    "Progress by phase": "Progression par phase",
-    "Read": "Lecture",
-    "Renamed": "Renommé",
-    "Search tools": "Rechercher des outils",
-    "Write": "Écriture",
   },
   es: {
     "Deployment name": "Nombre del despliegue",
@@ -18563,6 +18557,8 @@ export const translations: Record<string, Record<string, string>> = {
     "Save alert settings": "Guardar configuración de alertas",
     "Alert settings saved": "Configuración de alertas guardada",
     "Failed to save alert settings": "No se pudo guardar la configuración de alertas",
+    "Failed to save evidence retention settings":
+      "No se pudo guardar la configuración de retención de evidencias",
     "Notifications are delivered in-app, and by email when email alerts are enabled. A threshold set to notify and flag for revalidation also marks the model as due for a fresh validation.":
       "Las notificaciones se entregan en la aplicación y por correo electrónico cuando las alertas por correo están habilitadas. Un umbral configurado para notificar y marcar para revalidación también marca el modelo como pendiente de una nueva validación.",
     "A finding must be verified before it can be closed.":
@@ -18779,6 +18775,8 @@ export const translations: Record<string, Record<string, string>> = {
     "Evidence": "Evidencia",
     "Evidence hub": "Centro de evidencias",
     "Evidence Hub": "Centro de evidencias",
+    "Evidence Hub retention": "Retención del Centro de evidencias",
+    "Evidence retention settings saved": "Configuración de retención de evidencias guardada",
     "Reporting": "Informes",
     "AI trust center": "Centro de confianza de IA",
     "GOVERNANCE": "GOBERNANZA",
@@ -18952,6 +18950,7 @@ export const translations: Record<string, Record<string, string>> = {
     "Public": "Público",
     "Published": "Publicado",
     "Restricted": "Restringido",
+    "Retired": "Retirado",
     "Resolved": "Resuelto",
     "Reviewed": "Revisado",
     "Skipped": "Omitido",
@@ -19007,6 +19006,7 @@ export const translations: Record<string, Record<string, string>> = {
     "DATE UPDATED": "FECHA DE ACTUALIZACIÓN",
     "Due date": "Fecha de vencimiento",
     "Due today": "Vence hoy",
+    "No default": "Sin valor predeterminado",
     "No due date": "Sin fecha de vencimiento",
     "Expiry": "Caducidad",
     "EXPIRY": "CADUCIDAD",
@@ -19343,6 +19343,9 @@ export const translations: Record<string, Record<string, string>> = {
     "AI project": "Proyecto de IA",
     "AI Project": "Proyecto de IA",
     "AI PROJECT": "PROYECTO DE IA",
+    "Affected model": "Modelo afectado",
+    "AFFECTED MODEL": "MODELO AFECTADO",
+    "Select model from inventory": "Seleccionar modelo del inventario",
     "Project": "Proyecto",
     "How deadlines work": "Cómo funcionan los plazos",
     "Tasks in a filterable table": "Tareas en una tabla filtrable",
@@ -19497,6 +19500,7 @@ export const translations: Record<string, Record<string, string>> = {
     "Create use case": "Crear caso de uso",
     "Default TTL (seconds)": "TTL predeterminado (segundos)",
     "Default branch": "Rama predeterminada",
+    "Default retention period": "Período de retención predeterminado",
     "Departments (comma-separated)": "Departamentos (separados por comas)",
     "Display text (optional)": "Texto a mostrar (opcional)",
     "Enter folder description (optional)": "Introduzca la descripción de la carpeta (opcional)",
@@ -19596,6 +19600,11 @@ export const translations: Record<string, Record<string, string>> = {
     "Approve": "Aprobar",
     "Archive": "Archivar",
     "Archive form": "Archivar formulario",
+    "Applied to new evidence that has no explicit expiry date or retention policy of its own. A daily job flags records past their expiry date and notifies the reviewer or organization admins.":
+      "Se aplica a las nuevas evidencias sin fecha de caducidad explícita ni política de retención propia. Una tarea diaria marca los registros caducados y notifica al revisor o a los administradores de la organización.",
+    "Archive expired evidence": "Archivar evidencias caducadas",
+    "Archived evidence is hidden from the Evidence Hub list but never deleted. Archival also requires the server flag EVIDENCE_RETENTION_ARCHIVE_ENABLED.":
+      "Las evidencias archivadas se ocultan de la lista del Centro de evidencias pero nunca se eliminan. El archivado también requiere el flag de servidor EVIDENCE_RETENTION_ARCHIVE_ENABLED.",
     "Back to history": "Volver al historial",
     "Back to prompts": "Volver a los prompts",
     "Click to upload": "Haga clic para cargar",
@@ -19812,6 +19821,7 @@ export const translations: Record<string, Record<string, string>> = {
     "Run first experiment": "Ejecutar primer experimento",
     "Run your first experiment": "Ejecuta tu primer experimento",
     "Save changes": "Guardar cambios",
+    "Save retention settings": "Guardar configuración de retención",
     "Save Changes": "Guardar cambios",
     "Save configuration": "Guardar configuración",
     "Save dataset": "Guardar conjunto de datos",
@@ -22300,6 +22310,7 @@ export const translations: Record<string, Record<string, string>> = {
     "Experiment name": "Nombre del experimento",
     "Experiment results downloaded": "Resultados del experimento descargados",
     "Expired": "Caducado",
+    "Expiring soon": "Caduca pronto",
     "Expires": "Caduca",
     "Explainability": "Explicabilidad",
     "Exposed API keys and credentials": "Claves de API y credenciales expuestas",
@@ -27572,25 +27583,5 @@ export const translations: Record<string, Record<string, string>> = {
     "Workspace disconnected successfully!": "¡Espacio de trabajo desconectado correctamente!",
     "Workspace status updated successfully!":
       "¡Estado del espacio de trabajo actualizado correctamente!",
-    // AI Advisor roadmap
-    "AI Advisor roadmap": "Hoja de ruta del asesor de IA",
-    "All domains": "Todos los dominios",
-    "All kinds": "Todos los tipos",
-    "All phases": "Todas las fases",
-    "Failed to load the advisor tools roadmap. Please try again.":
-      "No se pudo cargar la hoja de ruta de herramientas del asesor. Inténtelo de nuevo.",
-    "Implemented under a different name": "Implementado con un nombre diferente",
-    "No tools match your search or filter criteria.":
-      "Ninguna herramienta coincide con sus criterios de búsqueda o filtrado.",
-    "Overall progress": "Progreso general",
-    "Planned tools": "Herramientas planificadas",
-    "Planned vs. implemented AI Advisor tools from the AI Implementation Plan.":
-      "Herramientas del asesor de IA planificadas frente a implementadas del Plan de Implementación de IA.",
-    "Progress by domain": "Progreso por dominio",
-    "Progress by phase": "Progreso por fase",
-    "Read": "Lectura",
-    "Renamed": "Renombrado",
-    "Search tools": "Buscar herramientas",
-    "Write": "Escritura",
   },
 };

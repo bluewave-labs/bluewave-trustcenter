@@ -44,8 +44,15 @@ const PageTour: React.FC<IPageTourProps> = ({ steps, run, onFinish, tourKey }) =
     <>
       <Global
         styles={{
-          ".__floater__arrow polygon": {
-            fill: "#1f1f23 !important",
+          // react-joyride 3.x renders the arrow as `.react-joyride__arrow`
+          // (the old `.__floater__arrow` class no longer exists) and its
+          // polygon uses `fill="currentColor"`, so drive it via `color` and
+          // match the tooltip card's top-left gradient colour (#1f1f23).
+          ".react-joyride__arrow": {
+            color: "#1f1f23 !important",
+          },
+          ".react-joyride__arrow polygon": {
+            fill: "currentColor !important",
           },
           ".react-joyride__beacon": {
             zIndex: "900 !important",

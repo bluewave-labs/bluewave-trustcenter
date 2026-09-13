@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState, useEffect } from "react";
+import React, { useCallback, useMemo, useState, useEffect, useRef } from "react";
 import { Command } from "cmdk";
 import { useNavigate, useLocation } from "react-router";
 import { Box, Typography, CircularProgress, Button } from "@mui/material";
@@ -44,6 +44,25 @@ interface CommandPaletteProps {
 
 // localStorage key for tracking if user has dismissed the welcome banner
 const WISE_SEARCH_WELCOME_DISMISSED_KEY = "verifywise_wise_search_welcome_dismissed";
+
+const FILTER_LISTBOX_ID = "command-palette-review-status-listbox";
+
+const REVIEW_STATUS_OPTIONS = [
+  { value: "", label: "All statuses" },
+  { value: "draft", label: "Draft" },
+  { value: "pending_review", label: "Pending review" },
+  { value: "approved", label: "Approved" },
+  { value: "rejected", label: "Rejected" },
+  { value: "expired", label: "Expired" },
+  { value: "superseded", label: "Superseded" },
+] as const;
+
+const getFilterOptionId = (value: string) => `command-palette-review-status-${value || "all"}`;
+
+const indexOfReviewStatus = (reviewStatus: string) => {
+  const index = REVIEW_STATUS_OPTIONS.findIndex((option) => option.value === reviewStatus);
+  return index >= 0 ? index : 0;
+};
 
 // Map entity types to icons
 const ENTITY_ICONS: Record<string, LucideIcon> = {
@@ -255,26 +274,25 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
     }
   }, [open]);
 
-  // Review Status filter options (values match file manager DB values)
-  const REVIEW_STATUS_OPTIONS = [
-    { value: "", label: "All statuses" },
-    { value: "draft", label: "Draft" },
-    { value: "pending_review", label: "Pending review" },
-    { value: "approved", label: "Approved" },
-    { value: "rejected", label: "Rejected" },
-    { value: "expired", label: "Expired" },
-    { value: "superseded", label: "Superseded" },
-  ];
-
-  // Whether the filter dropdown is open
   const [filterDropdownOpen, setFilterDropdownOpen] = useState(false);
-  const filterDropdownRef = React.useRef<HTMLDivElement>(null);
+  const [filterHighlightIndex, setFilterHighlightIndex] = useState(0);
+  const filterDropdownRef = useRef<HTMLDivElement>(null);
+  const filterTriggerRef = useRef<HTMLButtonElement>(null);
+
+  const closeFilterDropdown = useCallback(() => {
+    setFilterDropdownOpen(false);
+  }, []);
+
+  const openFilterDropdown = useCallback(() => {
+    setFilterHighlightIndex(indexOfReviewStatus(reviewStatus));
+    setFilterDropdownOpen(true);
+  }, [reviewStatus]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (filterDropdownRef.current && !filterDropdownRef.current.contains(event.target as Node)) {
-        setFilterDropdownOpen(false);
+        closeFilterDropdown();
       }
     }
     if (filterDropdownOpen) {
@@ -283,7 +301,15 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [filterDropdownOpen]);
+  }, [filterDropdownOpen, closeFilterDropdown]);
+
+  useEffect(() => {
+    if (!filterDropdownOpen) {
+      return;
+    }
+    const optionId = getFilterOptionId(REVIEW_STATUS_OPTIONS[filterHighlightIndex]?.value ?? "");
+    document.getElementById(optionId)?.focus();
+  }, [filterDropdownOpen, filterHighlightIndex]);
 
   // Create command context
   const commandContext: CommandContext = useMemo(
@@ -422,14 +448,80 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
     [removeFromRecent],
   );
 
-  const handleKeyDown = useCallback(
+  const handleFilterKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
-      if (e.key === "Escape") {
-        onOpenChange(false);
+      const lastIndex = REVIEW_STATUS_OPTIONS.length - 1;
+
+      if (!filterDropdownOpen) {
+        if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+          e.preventDefault();
+          e.stopPropagation();
+          openFilterDropdown();
+        }
+        return;
+      }
+
+      switch (e.key) {
+        case "Escape":
+          e.preventDefault();
+          e.stopPropagation();
+          closeFilterDropdown();
+          filterTriggerRef.current?.focus();
+          break;
+        case "Enter":
+        case " ":
+          e.stopPropagation();
+          break;
+        case "ArrowDown":
+          e.preventDefault();
+          e.stopPropagation();
+          setFilterHighlightIndex((index) => (index >= lastIndex ? 0 : index + 1));
+          break;
+        case "ArrowUp":
+          e.preventDefault();
+          e.stopPropagation();
+          setFilterHighlightIndex((index) => (index <= 0 ? lastIndex : index - 1));
+          break;
+        case "Home":
+          e.preventDefault();
+          e.stopPropagation();
+          setFilterHighlightIndex(0);
+          break;
+        case "End":
+          e.preventDefault();
+          e.stopPropagation();
+          setFilterHighlightIndex(lastIndex);
+          break;
+        default:
+          break;
       }
     },
-    [onOpenChange],
+    [closeFilterDropdown, filterDropdownOpen, openFilterDropdown],
   );
+
+  const handleFilterTriggerClick = useCallback(() => {
+    if (filterDropdownOpen) {
+      closeFilterDropdown();
+      return;
+    }
+    openFilterDropdown();
+  }, [closeFilterDropdown, filterDropdownOpen, openFilterDropdown]);
+
+  const handleFilterOptionSelect = useCallback(
+    (value: string) => {
+      setReviewStatus(value);
+      closeFilterDropdown();
+      filterTriggerRef.current?.focus();
+    },
+    [closeFilterDropdown, setReviewStatus],
+  );
+
+  const previouslyFocusedRef = useRef<HTMLElement | null>(null);
+  const wasOpenRef = useRef(open);
+  if (open && !wasOpenRef.current && typeof document !== "undefined") {
+    previouslyFocusedRef.current = document.activeElement as HTMLElement | null;
+  }
+  wasOpenRef.current = open;
 
   // Reset search and filters when closing
   const handleOpenChange = useCallback(
@@ -437,540 +529,626 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
       if (!newOpen) {
         setSearch("");
         setReviewStatus("");
-        setFilterDropdownOpen(false);
+        closeFilterDropdown();
       }
       onOpenChange(newOpen);
     },
-    [onOpenChange, setSearch, setReviewStatus],
+    [closeFilterDropdown, onOpenChange, setSearch, setReviewStatus],
   );
 
-  if (!open) return null;
+  const handleDialogEscapeKeyDown = useCallback(
+    (event: KeyboardEvent) => {
+      if (!filterDropdownOpen) {
+        return;
+      }
+      event.preventDefault();
+      closeFilterDropdown();
+      filterTriggerRef.current?.focus();
+    },
+    [closeFilterDropdown, filterDropdownOpen],
+  );
+
+  const handleDialogCloseAutoFocus = useCallback((event: Event) => {
+    event.preventDefault();
+    previouslyFocusedRef.current?.focus();
+  }, []);
 
   // Disable cmdk's built-in filtering when in search mode (we use server-side search)
   const shouldFilter = !isSearchMode;
 
   return (
-    <Command.Dialog
-      open={open}
-      onOpenChange={handleOpenChange}
-      className="command-dialog"
-      onKeyDown={handleKeyDown}
-      aria-describedby="command-palette-description"
-      value=""
-      onValueChange={() => {}}
-      shouldFilter={shouldFilter}
-    >
-      <Dialog.Title asChild>
-        <VisuallyHidden>Command Palette</VisuallyHidden>
-      </Dialog.Title>
-      <div className="command-dialog-content">
-        <div id="command-palette-description" className="sr-only">
-          Search for commands, navigate to pages, or perform actions using keyboard shortcuts. Use
-          arrow keys to navigate, Enter to select, and Escape to close.
-        </div>
-
-        <div className="command-input-wrapper">
-          <Command.Input
-            value={search}
-            onValueChange={setSearch}
-            placeholder=""
-            className="command-input"
-            aria-label="Search commands"
-            aria-describedby="command-palette-help"
-            autoComplete="off"
-            autoCorrect="off"
-            spellCheck="false"
-          />
-          {/* Cycling hint text overlay - visible only when input is empty */}
-          {!search && (
-            <span
-              className={`command-input-hint ${hintVisible ? "hint-visible" : "hint-hidden"}`}
-              aria-hidden="true"
-            >
-              {SEARCH_HINTS[currentHintIndex]}
-            </span>
-          )}
-        </div>
-
-        <div id="command-palette-help" className="sr-only">
-          {isSearchMode
-            ? `${actualTotalCount} results found. Type to search across all data.`
-            : `${commands.length} commands available. Type to filter commands.`}
-        </div>
-
-        {/* Review Status Filter Bar */}
-        <Box
-          className="command-filter-bar"
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            gap: 1,
-            padding: "6px 12px",
-            borderTop: "1px solid",
-            borderTopColor: "var(--filter-border, #e5e5e5)",
-            borderBottom: "1px solid",
-            borderBottomColor: "var(--filter-border, #e5e5e5)",
-            background: "var(--filter-bg, #fafafa)",
-            minHeight: "36px",
-          }}
+    <Dialog.Root open={open} onOpenChange={handleOpenChange}>
+      <Dialog.Portal>
+        <Dialog.Overlay />
+        <Dialog.Content
+          className="command-dialog"
+          aria-modal="true"
+          aria-describedby="command-palette-description"
+          onEscapeKeyDown={handleDialogEscapeKeyDown}
+          onCloseAutoFocus={handleDialogCloseAutoFocus}
         >
-          <Filter size={14} color="#999" />
-          <Typography
-            sx={{ fontSize: "12px", color: "#999", whiteSpace: "nowrap", userSelect: "none" }}
-          >
-            Evidence Status:
-          </Typography>
-          <Box ref={filterDropdownRef} sx={{ position: "relative" }}>
-            <Box
-              component="button"
-              onClick={() => setFilterDropdownOpen(!filterDropdownOpen)}
-              className="command-filter-trigger"
-              sx={{
-                "display": "flex",
-                "alignItems": "center",
-                "gap": 0.5,
-                "background": reviewStatus ? "rgba(19, 113, 91, 0.1)" : "transparent",
-                "border": "1px solid",
-                "borderColor": reviewStatus ? "rgba(19, 113, 91, 0.3)" : "rgba(0,0,0,0.12)",
-                "borderRadius": "4px",
-                "padding": "3px 8px",
-                "cursor": "pointer",
-                "fontSize": "12px",
-                "color": reviewStatus ? "brand.primary" : "#666",
-                "fontWeight": reviewStatus ? 500 : 400,
-                "whiteSpace": "nowrap",
-                "transition": "all 0.15s ease",
-                "&:hover": {
-                  borderColor: reviewStatus ? "rgba(19, 113, 91, 0.5)" : "rgba(0,0,0,0.25)",
-                  background: reviewStatus ? "rgba(19, 113, 91, 0.15)" : "rgba(0,0,0,0.04)",
-                },
-              }}
-              aria-label="Filter by review status"
-              aria-expanded={filterDropdownOpen}
-              aria-haspopup="listbox"
-            >
-              {REVIEW_STATUS_OPTIONS.find((o) => o.value === reviewStatus)?.label || "All statuses"}
-              <ChevronRight
-                size={12}
-                style={{
-                  transform: filterDropdownOpen ? "rotate(90deg)" : "rotate(0deg)",
-                  transition: "transform 0.15s ease",
-                }}
-              />
-            </Box>
+          <Dialog.Title asChild>
+            <VisuallyHidden>Command Palette</VisuallyHidden>
+          </Dialog.Title>
+          <Command value="" onValueChange={() => {}} shouldFilter={shouldFilter}>
+            <div className="command-dialog-content">
+              <div id="command-palette-description" className="sr-only">
+                Search for commands, navigate to pages, or perform actions using keyboard shortcuts.
+                Use arrow keys to navigate, Enter to select, and Escape to close.
+              </div>
 
-            {/* Dropdown menu */}
-            {filterDropdownOpen && (
+              <div className="command-input-wrapper">
+                <Command.Input
+                  value={search}
+                  onValueChange={setSearch}
+                  placeholder=""
+                  className="command-input"
+                  aria-label="Search commands"
+                  aria-describedby="command-palette-help"
+                  autoComplete="off"
+                  autoCorrect="off"
+                  spellCheck="false"
+                />
+                {/* Cycling hint text overlay - visible only when input is empty */}
+                {!search && (
+                  <span
+                    className={`command-input-hint ${hintVisible ? "hint-visible" : "hint-hidden"}`}
+                    aria-hidden="true"
+                  >
+                    {SEARCH_HINTS[currentHintIndex]}
+                  </span>
+                )}
+              </div>
+
+              <div id="command-palette-help" className="sr-only">
+                {isSearchMode
+                  ? `${actualTotalCount} results found. Type to search across all data.`
+                  : `${commands.length} commands available. Type to filter commands.`}
+              </div>
+
+              {/* Review Status Filter Bar */}
               <Box
-                className="command-filter-dropdown"
-                role="listbox"
-                aria-label="Review status options"
+                className="command-filter-bar"
                 sx={{
-                  position: "absolute",
-                  top: "100%",
-                  left: 0,
-                  marginTop: "4px",
-                  background: "var(--dropdown-bg, background.main)",
-                  border: "1px solid var(--filter-border, #e5e5e5)",
-                  borderRadius: "6px",
-                  boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-                  zIndex: 10,
-                  minWidth: "180px",
-                  overflow: "hidden",
-                  animation: "commandDialogFadeIn 0.1s ease-out",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1,
+                  padding: "6px 12px",
+                  borderTop: "1px solid",
+                  borderTopColor: "var(--filter-border, #e5e5e5)",
+                  borderBottom: "1px solid",
+                  borderBottomColor: "var(--filter-border, #e5e5e5)",
+                  background: "var(--filter-bg, #fafafa)",
+                  minHeight: "36px",
                 }}
               >
-                {REVIEW_STATUS_OPTIONS.map((option) => (
+                <Filter size={14} color="#999" />
+                <Typography
+                  sx={{ fontSize: "12px", color: "#999", whiteSpace: "nowrap", userSelect: "none" }}
+                >
+                  Evidence Status:
+                </Typography>
+                <Box
+                  ref={filterDropdownRef}
+                  sx={{ position: "relative" }}
+                  onKeyDown={handleFilterKeyDown}
+                >
                   <Box
-                    key={option.value}
+                    ref={filterTriggerRef}
                     component="button"
-                    role="option"
-                    aria-selected={reviewStatus === option.value}
-                    onClick={() => {
-                      setReviewStatus(option.value);
-                      setFilterDropdownOpen(false);
-                    }}
-                    className="command-filter-option"
+                    type="button"
+                    onClick={handleFilterTriggerClick}
+                    className="command-filter-trigger"
                     sx={{
                       "display": "flex",
                       "alignItems": "center",
-                      "width": "100%",
-                      "padding": "8px 12px",
-                      "border": "none",
-                      "background":
-                        reviewStatus === option.value ? "rgba(19, 113, 91, 0.08)" : "transparent",
+                      "gap": 0.5,
+                      "background": reviewStatus ? "rgba(19, 113, 91, 0.1)" : "transparent",
+                      "border": "1px solid",
+                      "borderColor": reviewStatus ? "rgba(19, 113, 91, 0.3)" : "rgba(0,0,0,0.12)",
+                      "borderRadius": "4px",
+                      "padding": "3px 8px",
                       "cursor": "pointer",
-                      "fontSize": "13px",
-                      "color": reviewStatus === option.value ? "brand.primary" : "#666",
-                      "fontWeight": reviewStatus === option.value ? 500 : 400,
-                      "textAlign": "left",
-                      "transition": "all 0.1s ease",
+                      "fontSize": "12px",
+                      "color": reviewStatus ? "brand.primary" : "#666",
+                      "fontWeight": reviewStatus ? 500 : 400,
+                      "whiteSpace": "nowrap",
+                      "transition": "all 0.15s ease",
                       "&:hover": {
-                        background:
-                          reviewStatus === option.value
-                            ? "rgba(19, 113, 91, 0.12)"
-                            : "rgba(0,0,0,0.04)",
-                      },
-                      "&:not(:last-child)": {
-                        borderBottom: "1px solid",
-                        borderBottomColor: "var(--filter-border, #f0f0f0)",
+                        borderColor: reviewStatus ? "rgba(19, 113, 91, 0.5)" : "rgba(0,0,0,0.25)",
+                        background: reviewStatus ? "rgba(19, 113, 91, 0.15)" : "rgba(0,0,0,0.04)",
                       },
                     }}
+                    aria-label="Filter by review status"
+                    aria-expanded={filterDropdownOpen}
+                    aria-haspopup="listbox"
+                    aria-controls={FILTER_LISTBOX_ID}
                   >
-                    {option.label}
+                    {REVIEW_STATUS_OPTIONS.find((o) => o.value === reviewStatus)?.label ||
+                      "All statuses"}
+                    <ChevronRight
+                      size={12}
+                      style={{
+                        transform: filterDropdownOpen ? "rotate(90deg)" : "rotate(0deg)",
+                        transition: "transform 0.15s ease",
+                      }}
+                    />
                   </Box>
-                ))}
-              </Box>
-            )}
-          </Box>
 
-          {/* Clear filter button - only shown when a filter is active */}
-          {reviewStatus && (
-            <Box
-              component="button"
-              onClick={() => {
-                setReviewStatus("");
-                setFilterDropdownOpen(false);
-              }}
-              sx={{
-                "display": "flex",
-                "alignItems": "center",
-                "justifyContent": "center",
-                "background": "none",
-                "border": "none",
-                "padding": "2px",
-                "cursor": "pointer",
-                "borderRadius": "3px",
-                "color": "#999",
-                "&:hover": {
-                  background: "rgba(0,0,0,0.06)",
-                  color: "#666",
-                },
-              }}
-              aria-label="Clear review status filter"
-            >
-              <X size={14} />
-            </Box>
-          )}
-        </Box>
-
-        <Command.List className="command-list">
-          {/* Welcome Banner - shown only for first-time users */}
-          {showWelcomeBanner && !search && (
-            <WiseSearchWelcomeBanner onDismiss={handleDismissWelcome} />
-          )}
-
-          {/* Loading state for search */}
-          {isSearching && (
-            <Box
-              sx={{ display: "flex", alignItems: "center", justifyContent: "center", padding: 3 }}
-            >
-              <CircularProgress size={20} sx={{ color: "brand.primary" }} />
-              <Typography sx={{ ml: 2, color: "#666" }}>Searching...</Typography>
-            </Box>
-          )}
-
-          {/* Empty state */}
-          {!isSearching && isSearchMode && flatResults.length === 0 && (
-            <Command.Empty className="command-empty">
-              <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
-                <Search size={24} color="#999" />
-                <Typography color="text.secondary">
-                  {search
-                    ? `No results found for "${search}"${reviewStatus ? ` with status "${REVIEW_STATUS_OPTIONS.find((o) => o.value === reviewStatus)?.label}"` : ""}`
-                    : `No files found with status "${REVIEW_STATUS_OPTIONS.find((o) => o.value === reviewStatus)?.label}"`}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {search
-                    ? "Try different keywords or check spelling"
-                    : "Try a different status or add a search term"}
-                </Typography>
-              </Box>
-            </Command.Empty>
-          )}
-
-          {/* Search Results */}
-          {isSearchMode && !isSearching && flatResults.length > 0 && (
-            <>
-              <Box
-                sx={{
-                  px: 2,
-                  py: 1,
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
-              >
-                <Typography variant="caption" sx={{ color: "#999", fontWeight: 400 }}>
-                  {actualTotalCount} result{actualTotalCount !== 1 ? "s" : ""} found
-                  {reviewStatus && (
-                    <Typography
-                      component="span"
-                      variant="caption"
-                      sx={{ color: "brand.primary", fontWeight: 500, ml: 0.5 }}
+                  {/* Dropdown menu */}
+                  {filterDropdownOpen && (
+                    <Box
+                      id={FILTER_LISTBOX_ID}
+                      className="command-filter-dropdown"
+                      role="listbox"
+                      aria-label="Review status options"
+                      aria-activedescendant={getFilterOptionId(
+                        REVIEW_STATUS_OPTIONS[filterHighlightIndex]?.value ?? "",
+                      )}
+                      sx={{
+                        position: "absolute",
+                        top: "100%",
+                        left: 0,
+                        marginTop: "4px",
+                        background: "var(--dropdown-bg, background.main)",
+                        border: "1px solid var(--filter-border, #e5e5e5)",
+                        borderRadius: "6px",
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                        zIndex: 10,
+                        minWidth: "180px",
+                        overflow: "hidden",
+                        animation: "commandDialogFadeIn 0.1s ease-out",
+                      }}
                     >
-                      &middot; Filtered by:{" "}
-                      {REVIEW_STATUS_OPTIONS.find((o) => o.value === reviewStatus)?.label}
-                    </Typography>
+                      {REVIEW_STATUS_OPTIONS.map((option, index) => {
+                        const isSelected = reviewStatus === option.value;
+                        const isHighlighted = index === filterHighlightIndex;
+                        return (
+                          <Box
+                            key={option.value}
+                            id={getFilterOptionId(option.value)}
+                            component="button"
+                            type="button"
+                            role="option"
+                            aria-selected={isSelected}
+                            tabIndex={isHighlighted ? 0 : -1}
+                            onClick={() => handleFilterOptionSelect(option.value)}
+                            className="command-filter-option"
+                            sx={{
+                              "display": "flex",
+                              "alignItems": "center",
+                              "width": "100%",
+                              "padding": "8px 12px",
+                              "border": "none",
+                              "background": isHighlighted
+                                ? "rgba(19, 113, 91, 0.12)"
+                                : isSelected
+                                  ? "rgba(19, 113, 91, 0.08)"
+                                  : "transparent",
+                              "cursor": "pointer",
+                              "fontSize": "13px",
+                              "color": isSelected || isHighlighted ? "brand.primary" : "#666",
+                              "fontWeight": isSelected ? 500 : 400,
+                              "textAlign": "left",
+                              "transition": "all 0.1s ease",
+                              "&:hover": {
+                                background:
+                                  isSelected || isHighlighted
+                                    ? "rgba(19, 113, 91, 0.12)"
+                                    : "rgba(0,0,0,0.04)",
+                              },
+                              "&:not(:last-child)": {
+                                borderBottom: "1px solid",
+                                borderBottomColor: "var(--filter-border, #f0f0f0)",
+                              },
+                            }}
+                          >
+                            {option.label}
+                          </Box>
+                        );
+                      })}
+                    </Box>
                   )}
-                </Typography>
+                </Box>
+
+                {/* Clear filter button - only shown when a filter is active */}
+                {reviewStatus && (
+                  <Box
+                    component="button"
+                    type="button"
+                    onClick={() => {
+                      setReviewStatus("");
+                      closeFilterDropdown();
+                    }}
+                    sx={{
+                      "display": "flex",
+                      "alignItems": "center",
+                      "justifyContent": "center",
+                      "background": "none",
+                      "border": "none",
+                      "padding": "2px",
+                      "cursor": "pointer",
+                      "borderRadius": "3px",
+                      "color": "#999",
+                      "&:hover": {
+                        background: "rgba(0,0,0,0.06)",
+                        color: "#666",
+                      },
+                    }}
+                    aria-label="Clear review status filter"
+                  >
+                    <X size={14} />
+                  </Box>
+                )}
               </Box>
 
-              {groupedSearchResults.map(({ entityType, displayName, results }) => (
-                <Command.Group key={entityType} heading={displayName} className="command-group">
-                  {results.map((result) => {
-                    const IconComponent = ENTITY_ICONS[entityType] || FileText;
-                    return (
-                      <Command.Item
-                        key={`${entityType}-${result.id}`}
-                        value={`${entityType}-${result.id}-${result.title} ${result.subtitle || ""}`}
-                        onSelect={() => handleSearchResultSelect(result)}
-                        className="command-item"
-                        role="option"
-                      >
-                        <Box
-                          sx={{ display: "flex", alignItems: "center", gap: 1.5, width: "100%" }}
-                        >
-                          <Box
-                            sx={{
-                              color: "#7B9A7A",
-                              opacity: 0.8,
-                              display: "flex",
-                              alignItems: "center",
-                              marginRight: "4px",
-                            }}
-                            aria-hidden="true"
-                          >
-                            <IconComponent size={16} />
-                          </Box>
-                          <Box sx={{ flex: 1, overflow: "hidden" }}>
-                            <Typography variant="body2" className="command-item-title" noWrap>
-                              {result.title}
-                            </Typography>
-                          </Box>
-                          <Box
-                            className="command-item-chevron"
-                            sx={{
-                              color: "#999",
-                              display: "flex",
-                              alignItems: "center",
-                              opacity: 0,
-                              transition: "opacity 0.15s ease-in-out",
-                            }}
-                            aria-hidden="true"
-                          >
-                            <ChevronRight size={14} />
-                          </Box>
-                        </Box>
-                      </Command.Item>
-                    );
-                  })}
-                </Command.Group>
-              ))}
-            </>
-          )}
+              <Command.List className="command-list">
+                {/* Welcome Banner - shown only for first-time users */}
+                {showWelcomeBanner && !search && (
+                  <WiseSearchWelcomeBanner onDismiss={handleDismissWelcome} />
+                )}
 
-          {/* Commands (show when not in search mode) */}
-          {!isSearchMode && (
-            <>
-              {/* Recent Searches */}
-              {recentSearches.length > 0 && !search && (
-                <Command.Group heading="Recent searches" className="command-group">
-                  {recentSearches.map((recent) => (
-                    <Command.Item
-                      key={recent.timestamp}
-                      value={`recent ${recent.query}`}
-                      onSelect={() => handleRecentSearchClick(recent.query)}
-                      className="command-item"
+                {/* Loading state for search */}
+                {isSearching && (
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      padding: 3,
+                    }}
+                  >
+                    <CircularProgress size={20} sx={{ color: "brand.primary" }} />
+                    <Typography sx={{ ml: 2, color: "#666" }}>Searching...</Typography>
+                  </Box>
+                )}
+
+                {/* Empty state */}
+                {!isSearching && isSearchMode && flatResults.length === 0 && (
+                  <Command.Empty className="command-empty">
+                    <Box
+                      sx={{
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        gap: 1,
+                      }}
                     >
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, width: "100%" }}>
-                        <Clock
-                          size={16}
-                          color="#7B9A7A"
-                          opacity={0.8}
-                          style={{ marginRight: "4px" }}
-                        />
-                        <Typography variant="body2" sx={{ flex: 1 }}>
-                          {recent.query}
-                        </Typography>
-                        <Box
-                          component="button"
-                          onClick={(e: React.MouseEvent) =>
-                            handleRemoveRecentSearch(e, recent.timestamp)
-                          }
-                          sx={{
-                            "background": "none",
-                            "border": "none",
-                            "padding": "4px",
-                            "cursor": "pointer",
-                            "display": "flex",
-                            "alignItems": "center",
-                            "justifyContent": "center",
-                            "borderRadius": "4px",
-                            "color": "#999",
-                            "&:hover": {
-                              background: "rgba(0, 0, 0, 0.05)",
-                              color: "#666",
-                            },
-                          }}
-                          aria-label={`Remove "${recent.query}" from recent searches`}
-                        >
-                          <X size={14} />
-                        </Box>
-                      </Box>
-                    </Command.Item>
-                  ))}
-                </Command.Group>
-              )}
+                      <Search size={24} color="#999" />
+                      <Typography color="text.secondary">
+                        {search
+                          ? `No results found for "${search}"${reviewStatus ? ` with status "${REVIEW_STATUS_OPTIONS.find((o) => o.value === reviewStatus)?.label}"` : ""}`
+                          : `No files found with status "${REVIEW_STATUS_OPTIONS.find((o) => o.value === reviewStatus)?.label}"`}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {search
+                          ? "Try different keywords or check spelling"
+                          : "Try a different status or add a search term"}
+                      </Typography>
+                    </Box>
+                  </Command.Empty>
+                )}
 
-              <Command.Empty className="command-empty">
-                <Typography color="text.secondary">No commands found for "{search}"</Typography>
-              </Command.Empty>
-
-              {groupedCommands.map(
-                ({
-                  group,
-                  commands: groupCommands,
-                }: {
-                  group: { id: string; label: string; priority: number };
-                  commands: CommandType[];
-                }) => (
-                  <Command.Group key={group.id} heading={group.label} className="command-group">
-                    {groupCommands.map((command) => (
-                      <Command.Item
-                        key={command.id}
-                        value={`${command.label} ${command.description} ${command.keywords?.join(" ")}`}
-                        onSelect={() => handleCommandSelect(command)}
-                        className="command-item"
-                        role="option"
-                        aria-describedby={command.description ? `desc-${command.id}` : undefined}
-                      >
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 2, width: "100%" }}>
-                          {command.icon && (
-                            <Box
-                              sx={{
-                                color: "#7B9A7A",
-                                opacity: 0.8,
-                                display: "flex",
-                                alignItems: "center",
-                              }}
-                              aria-hidden="true"
-                            >
-                              <command.icon size={16} strokeWidth={1.5} />
-                            </Box>
-                          )}
+                {/* Search Results */}
+                {isSearchMode && !isSearching && flatResults.length > 0 && (
+                  <>
+                    <Box
+                      sx={{
+                        px: 2,
+                        py: 1,
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                      }}
+                    >
+                      <Typography variant="caption" sx={{ color: "#999", fontWeight: 400 }}>
+                        {actualTotalCount} result{actualTotalCount !== 1 ? "s" : ""} found
+                        {reviewStatus && (
                           <Typography
-                            variant="body2"
-                            className="command-item-title"
-                            sx={{ flex: 0, whiteSpace: "nowrap" }}
+                            component="span"
+                            variant="caption"
+                            sx={{ color: "brand.primary", fontWeight: 500, ml: 0.5 }}
                           >
-                            {command.label}
+                            &middot; Filtered by:{" "}
+                            {REVIEW_STATUS_OPTIONS.find((o) => o.value === reviewStatus)?.label}
                           </Typography>
-                          {command.description && (
-                            <Typography
-                              id={`desc-${command.id}`}
-                              variant="caption"
-                              sx={{
-                                marginLeft: "auto",
-                                color: "#999",
-                                opacity: 0.8,
-                              }}
-                              aria-label={`Description: ${command.description}`}
+                        )}
+                      </Typography>
+                    </Box>
+
+                    {groupedSearchResults.map(({ entityType, displayName, results }) => (
+                      <Command.Group
+                        key={entityType}
+                        heading={displayName}
+                        className="command-group"
+                      >
+                        {results.map((result) => {
+                          const IconComponent = ENTITY_ICONS[entityType] || FileText;
+                          return (
+                            <Command.Item
+                              key={`${entityType}-${result.id}`}
+                              value={`${entityType}-${result.id}-${result.title} ${result.subtitle || ""}`}
+                              onSelect={() => handleSearchResultSelect(result)}
+                              className="command-item"
+                              role="option"
                             >
-                              {command.description}
-                            </Typography>
-                          )}
-                          {command.shortcut && (
-                            <Box
-                              sx={{ display: "flex", gap: 0.5 }}
-                              aria-label={`Keyboard shortcut: ${command.shortcut.join(" ")}`}
-                            >
-                              {command.shortcut.map((key: string, index: number) => (
-                                <Typography
-                                  key={index}
-                                  variant="caption"
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 1.5,
+                                  width: "100%",
+                                }}
+                              >
+                                <Box
                                   sx={{
-                                    backgroundColor: "rgba(0, 0, 0, 0.1)",
-                                    padding: "2px 6px",
-                                    borderRadius: "4px",
-                                    fontSize: "11px",
+                                    color: "#7B9A7A",
+                                    opacity: 0.8,
+                                    display: "flex",
+                                    alignItems: "center",
+                                    marginRight: "4px",
                                   }}
                                   aria-hidden="true"
                                 >
-                                  {key}
-                                </Typography>
-                              ))}
-                            </Box>
-                          )}
-                          <Box
-                            className="command-item-chevron"
-                            sx={{
-                              color: "#999",
-                              display: "flex",
-                              alignItems: "center",
-                              opacity: 0,
-                              transition: "opacity 0.15s ease-in-out",
-                              marginLeft: command.shortcut || command.description ? "8px" : "auto",
-                            }}
-                            aria-hidden="true"
-                          >
-                            <ChevronRight size={14} />
-                          </Box>
-                        </Box>
-                      </Command.Item>
+                                  <IconComponent size={16} />
+                                </Box>
+                                <Box sx={{ flex: 1, overflow: "hidden" }}>
+                                  <Typography variant="body2" className="command-item-title" noWrap>
+                                    {result.title}
+                                  </Typography>
+                                </Box>
+                                <Box
+                                  className="command-item-chevron"
+                                  sx={{
+                                    color: "#999",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    opacity: 0,
+                                    transition: "opacity 0.15s ease-in-out",
+                                  }}
+                                  aria-hidden="true"
+                                >
+                                  <ChevronRight size={14} />
+                                </Box>
+                              </Box>
+                            </Command.Item>
+                          );
+                        })}
+                      </Command.Group>
                     ))}
-                  </Command.Group>
-                ),
-              )}
-            </>
-          )}
-        </Command.List>
+                  </>
+                )}
 
-        {/* Navigation hints footer */}
-        <Box
-          className="command-footer"
-          sx={{
-            padding: "4px 16px",
-            display: "flex",
-            alignItems: "center",
-            gap: 4,
-            fontSize: "10px",
-            minHeight: "24px",
-          }}
-        >
-          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-            <Box
-              className="command-footer-key"
-              sx={{ display: "flex", alignItems: "center", gap: "2px" }}
-            >
-              <ArrowUp size={10} />
-              <ArrowDown size={10} />
-            </Box>
-            <Typography sx={{ fontSize: "10px", color: "#666" }}>Navigate</Typography>
-          </Box>
+                {/* Commands (show when not in search mode) */}
+                {!isSearchMode && (
+                  <>
+                    {/* Recent Searches */}
+                    {recentSearches.length > 0 && !search && (
+                      <Command.Group heading="Recent searches" className="command-group">
+                        {recentSearches.map((recent) => (
+                          <Command.Item
+                            key={recent.timestamp}
+                            value={`recent ${recent.query}`}
+                            onSelect={() => handleRecentSearchClick(recent.query)}
+                            className="command-item"
+                          >
+                            <Box
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 1.5,
+                                width: "100%",
+                              }}
+                            >
+                              <Clock
+                                size={16}
+                                color="#7B9A7A"
+                                opacity={0.8}
+                                style={{ marginRight: "4px" }}
+                              />
+                              <Typography variant="body2" sx={{ flex: 1 }}>
+                                {recent.query}
+                              </Typography>
+                              <Box
+                                component="button"
+                                onClick={(e: React.MouseEvent) =>
+                                  handleRemoveRecentSearch(e, recent.timestamp)
+                                }
+                                sx={{
+                                  "background": "none",
+                                  "border": "none",
+                                  "padding": "4px",
+                                  "cursor": "pointer",
+                                  "display": "flex",
+                                  "alignItems": "center",
+                                  "justifyContent": "center",
+                                  "borderRadius": "4px",
+                                  "color": "#999",
+                                  "&:hover": {
+                                    background: "rgba(0, 0, 0, 0.05)",
+                                    color: "#666",
+                                  },
+                                }}
+                                aria-label={`Remove "${recent.query}" from recent searches`}
+                              >
+                                <X size={14} />
+                              </Box>
+                            </Box>
+                          </Command.Item>
+                        ))}
+                      </Command.Group>
+                    )}
 
-          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-            <Box className="command-footer-key" sx={{ display: "flex", alignItems: "center" }}>
-              <CornerDownLeft size={10} />
-            </Box>
-            <Typography sx={{ fontSize: "10px", color: "#666" }}>Select</Typography>
-          </Box>
+                    <Command.Empty className="command-empty">
+                      <Typography color="text.secondary">
+                        No commands found for "{search}"
+                      </Typography>
+                    </Command.Empty>
 
-          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-            <Box className="command-footer-key">esc</Box>
-            <Typography sx={{ fontSize: "10px", color: "#666" }}>Close</Typography>
-          </Box>
+                    {groupedCommands.map(
+                      ({
+                        group,
+                        commands: groupCommands,
+                      }: {
+                        group: { id: string; label: string; priority: number };
+                        commands: CommandType[];
+                      }) => (
+                        <Command.Group
+                          key={group.id}
+                          heading={group.label}
+                          className="command-group"
+                        >
+                          {groupCommands.map((command) => (
+                            <Command.Item
+                              key={command.id}
+                              value={`${command.label} ${command.description} ${command.keywords?.join(" ")}`}
+                              onSelect={() => handleCommandSelect(command)}
+                              className="command-item"
+                              role="option"
+                              aria-describedby={
+                                command.description ? `desc-${command.id}` : undefined
+                              }
+                            >
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 2,
+                                  width: "100%",
+                                }}
+                              >
+                                {command.icon && (
+                                  <Box
+                                    sx={{
+                                      color: "#7B9A7A",
+                                      opacity: 0.8,
+                                      display: "flex",
+                                      alignItems: "center",
+                                    }}
+                                    aria-hidden="true"
+                                  >
+                                    <command.icon size={16} strokeWidth={1.5} />
+                                  </Box>
+                                )}
+                                <Typography
+                                  variant="body2"
+                                  className="command-item-title"
+                                  sx={{ flex: 0, whiteSpace: "nowrap" }}
+                                >
+                                  {command.label}
+                                </Typography>
+                                {command.description && (
+                                  <Typography
+                                    id={`desc-${command.id}`}
+                                    variant="caption"
+                                    sx={{
+                                      marginLeft: "auto",
+                                      color: "#999",
+                                      opacity: 0.8,
+                                    }}
+                                    aria-label={`Description: ${command.description}`}
+                                  >
+                                    {command.description}
+                                  </Typography>
+                                )}
+                                {command.shortcut && (
+                                  <Box
+                                    sx={{ display: "flex", gap: 0.5 }}
+                                    aria-label={`Keyboard shortcut: ${command.shortcut.join(" ")}`}
+                                  >
+                                    {command.shortcut.map((key: string, index: number) => (
+                                      <Typography
+                                        key={index}
+                                        variant="caption"
+                                        sx={{
+                                          backgroundColor: "rgba(0, 0, 0, 0.1)",
+                                          padding: "2px 6px",
+                                          borderRadius: "4px",
+                                          fontSize: "11px",
+                                        }}
+                                        aria-hidden="true"
+                                      >
+                                        {key}
+                                      </Typography>
+                                    ))}
+                                  </Box>
+                                )}
+                                <Box
+                                  className="command-item-chevron"
+                                  sx={{
+                                    color: "#999",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    opacity: 0,
+                                    transition: "opacity 0.15s ease-in-out",
+                                    marginLeft:
+                                      command.shortcut || command.description ? "8px" : "auto",
+                                  }}
+                                  aria-hidden="true"
+                                >
+                                  <ChevronRight size={14} />
+                                </Box>
+                              </Box>
+                            </Command.Item>
+                          ))}
+                        </Command.Group>
+                      ),
+                    )}
+                  </>
+                )}
+              </Command.List>
 
-          <Box sx={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 0.5 }}>
-            <Typography sx={{ fontSize: "10px", color: "#666" }}>You can use</Typography>
-            <Box className="command-footer-key">{isMac ? "⌘" : "Ctrl"}</Box>
-            <Box className="command-footer-key">K</Box>
-            <Typography sx={{ fontSize: "10px", color: "#666" }}>
-              to easily open Wise Search
-            </Typography>
-          </Box>
-        </Box>
-      </div>
-    </Command.Dialog>
+              {/* Navigation hints footer */}
+              <Box
+                className="command-footer"
+                sx={{
+                  padding: "4px 16px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 4,
+                  fontSize: "10px",
+                  minHeight: "24px",
+                }}
+              >
+                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                  <Box
+                    className="command-footer-key"
+                    sx={{ display: "flex", alignItems: "center", gap: "2px" }}
+                  >
+                    <ArrowUp size={10} />
+                    <ArrowDown size={10} />
+                  </Box>
+                  <Typography sx={{ fontSize: "10px", color: "#666" }}>Navigate</Typography>
+                </Box>
+
+                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                  <Box
+                    className="command-footer-key"
+                    sx={{ display: "flex", alignItems: "center" }}
+                  >
+                    <CornerDownLeft size={10} />
+                  </Box>
+                  <Typography sx={{ fontSize: "10px", color: "#666" }}>Select</Typography>
+                </Box>
+
+                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                  <Box className="command-footer-key">esc</Box>
+                  <Typography sx={{ fontSize: "10px", color: "#666" }}>Close</Typography>
+                </Box>
+
+                <Box sx={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 0.5 }}>
+                  <Typography sx={{ fontSize: "10px", color: "#666" }}>You can use</Typography>
+                  <Box className="command-footer-key">{isMac ? "⌘" : "Ctrl"}</Box>
+                  <Box className="command-footer-key">K</Box>
+                  <Typography sx={{ fontSize: "10px", color: "#666" }}>
+                    to easily open Wise Search
+                  </Typography>
+                </Box>
+              </Box>
+            </div>
+          </Command>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
   );
 }

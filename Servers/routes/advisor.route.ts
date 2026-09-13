@@ -1,7 +1,6 @@
 import express from "express";
 const router = express.Router();
 import authenticateJWT from "../middleware/auth.middleware";
-import authorize from "../middleware/accessControl.middleware";
 import {
   runAdvisor,
   streamAdvisor,
@@ -15,9 +14,7 @@ import {
   deleteMyMemory,
   adminClearAgentMemory,
   adminListAgentMessages,
-  getToolsRoadmap,
 } from "../controllers/advisor.ctrl";
-import { ADVISOR_ROADMAP_READ_ROLES } from "../advisor/roadmap/roadmapService";
 import {
   validateAdminAgentParam,
   validateConversationParams,
@@ -36,15 +33,6 @@ router.post("/stream", authenticateJWT, validateRunAdvisor, streamAdvisor);
 
 // AI SDK streaming endpoint (native UI message stream protocol for useChat)
 router.post("/chat", authenticateJWT, validateStreamAdvisorV2, streamAdvisorV2);
-
-// Tools roadmap — read-only plan-vs-implementation tracker.
-// Role read access (Admin, Editor, Reviewer, Auditor) enforced server-side.
-router.get(
-  "/tools/roadmap",
-  authenticateJWT,
-  authorize(ADVISOR_ROADMAP_READ_ROLES),
-  getToolsRoadmap,
-);
 
 // Conversation persistence endpoints (multi-conversation per domain)
 router.get("/conversations/:domain", authenticateJWT, validateDomainParam, listConversations);

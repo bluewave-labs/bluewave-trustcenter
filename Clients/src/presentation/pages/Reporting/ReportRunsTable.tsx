@@ -38,6 +38,7 @@ import {
   useDeleteRun,
   useRunAnalyses,
 } from "../../../application/hooks/useReporting";
+import useFormattedDate from "../../../application/hooks/useFormattedDate";
 import { downloadReportRun } from "../../../application/repository/reporting.repository";
 
 const ROWS_PER_PAGE_DEFAULT = 10;
@@ -108,6 +109,7 @@ const scopeLabel = (r: any): string => {
 
 export default function ReportRunsTable({ variant }: { variant: "live" | "archived" }) {
   const theme = useTheme();
+  const formatDate = useFormattedDate();
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(ROWS_PER_PAGE_DEFAULT);
   // Which run's analyses the drawer is showing. null = drawer closed, which also
@@ -238,7 +240,7 @@ export default function ReportRunsTable({ variant }: { variant: "live" | "archiv
                   {scopeLabel(r)}
                 </TableCell>
                 <TableCell sx={{ ...bodyCell, color: textColors.secondary }}>
-                  {new Date(r.created_at).toLocaleString()}
+                  {formatDate(new Date(r.created_at), { includeTime: true })}
                 </TableCell>
                 <TableCell sx={{ ...bodyCell, color: textColors.secondary }}>
                   {r.triggered_by}

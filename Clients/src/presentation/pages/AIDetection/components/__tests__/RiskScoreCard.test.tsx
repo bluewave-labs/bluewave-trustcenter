@@ -1,4 +1,5 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { screen, fireEvent } from "@testing-library/react";
+import { renderWithProviders } from "../../../../../test/renderWithProviders";
 import { RiskScoreCard } from "../RiskScoreCard";
 import type { RiskScoreDetails } from "../../../../../domain/ai-detection/riskScoringTypes";
 
@@ -22,7 +23,9 @@ function makeDetails(overrides: Partial<RiskScoreDetails> = {}): RiskScoreDetail
 
 describe("RiskScoreCard", () => {
   it("shows the not-scored state when score/grade are null", () => {
-    render(<RiskScoreCard score={null} grade={null} details={null} calculatedAt={null} />);
+    renderWithProviders(
+      <RiskScoreCard score={null} grade={null} details={null} calculatedAt={null} />,
+    );
 
     expect(
       screen.getByText(/No risk score has been calculated for this scan yet/),
@@ -30,7 +33,7 @@ describe("RiskScoreCard", () => {
   });
 
   it("renders overall score, grade and dimensions-at-risk cards for a scored scan", () => {
-    render(
+    renderWithProviders(
       <RiskScoreCard
         score={82}
         grade="B"
@@ -47,7 +50,7 @@ describe("RiskScoreCard", () => {
   });
 
   it("labels moderate and high risk score bands correctly", () => {
-    const { rerender } = render(
+    const { rerender } = renderWithProviders(
       <RiskScoreCard score={65} grade="C" details={makeDetails()} calculatedAt={null} />,
     );
     expect(screen.getByText("Moderate risk")).toBeInTheDocument();
@@ -57,7 +60,9 @@ describe("RiskScoreCard", () => {
   });
 
   it("renders the dimension breakdown labels", () => {
-    render(<RiskScoreCard score={82} grade="B" details={makeDetails()} calculatedAt={null} />);
+    renderWithProviders(
+      <RiskScoreCard score={82} grade="B" details={makeDetails()} calculatedAt={null} />,
+    );
 
     expect(screen.getByText("Data sovereignty")).toBeInTheDocument();
     expect(screen.getByText("Transparency")).toBeInTheDocument();
@@ -67,7 +72,9 @@ describe("RiskScoreCard", () => {
   });
 
   it("does not render the AI analysis section when llm_enhanced is false", () => {
-    render(<RiskScoreCard score={82} grade="B" details={makeDetails()} calculatedAt={null} />);
+    renderWithProviders(
+      <RiskScoreCard score={82} grade="B" details={makeDetails()} calculatedAt={null} />,
+    );
 
     expect(screen.queryByText("AI analysis")).not.toBeInTheDocument();
   });
@@ -79,7 +86,9 @@ describe("RiskScoreCard", () => {
       llm_recommendations: ["Rotate leaked credentials", "Add **input validation**"],
     });
 
-    render(<RiskScoreCard score={55} grade="C" details={details} calculatedAt={null} />);
+    renderWithProviders(
+      <RiskScoreCard score={55} grade="C" details={details} calculatedAt={null} />,
+    );
 
     expect(screen.getByText("AI analysis")).toBeInTheDocument();
     // Recommendations are inside a Collapse that starts closed
@@ -100,7 +109,9 @@ describe("RiskScoreCard", () => {
       llm_narrative: longSentence,
     });
 
-    render(<RiskScoreCard score={55} grade="C" details={details} calculatedAt={null} />);
+    renderWithProviders(
+      <RiskScoreCard score={55} grade="C" details={details} calculatedAt={null} />,
+    );
     fireEvent.click(screen.getByText("AI analysis"));
 
     // Just verify narrative content rendered somewhere without throwing
@@ -108,7 +119,7 @@ describe("RiskScoreCard", () => {
   });
 
   it("shows a step progress dialog while recalculating", () => {
-    render(
+    renderWithProviders(
       <RiskScoreCard
         score={null}
         grade={null}

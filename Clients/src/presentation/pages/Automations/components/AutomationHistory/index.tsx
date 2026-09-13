@@ -41,6 +41,7 @@ import { EmptyState } from "../../../../components/EmptyState";
 import singleTheme from "../../../../themes/v1SingleTheme";
 import { ChevronsUpDown } from "lucide-react";
 import { status, background } from "../../../../themes/palette";
+import useFormattedDate from "../../../../../application/hooks/useFormattedDate";
 
 interface AutomationHistoryProps {
   automationId: string;
@@ -48,6 +49,7 @@ interface AutomationHistoryProps {
 
 const AutomationHistory: React.FC<AutomationHistoryProps> = ({ automationId }) => {
   const theme = useTheme();
+  const formatDate = useFormattedDate();
   const [logs, setLogs] = useState<AutomationExecutionLog[]>([]);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [page, setPage] = useState(0);
@@ -116,10 +118,6 @@ const AutomationHistory: React.FC<AutomationHistoryProps> = ({ automationId }) =
       failure: "Failure",
     };
     return labels[status];
-  };
-
-  const formatDate = (date: Date | string) => {
-    return new Date(date).toLocaleString();
   };
 
   const formatActionType = (actionType: string) => {
@@ -379,7 +377,7 @@ const AutomationHistory: React.FC<AutomationHistoryProps> = ({ automationId }) =
                         <Stack direction="row" spacing={1} alignItems="center">
                           <Clock size={14} color="#8594AC" />
                           <Typography sx={{ fontSize: 13 }}>
-                            {formatDate(log.triggered_at)}
+                            {formatDate(new Date(log.triggered_at), { includeTime: true })}
                           </Typography>
                         </Stack>
                       </TableCell>
@@ -449,7 +447,9 @@ const AutomationHistory: React.FC<AutomationHistoryProps> = ({ automationId }) =
                                           try {
                                             const date = new Date(value as string);
                                             if (!isNaN(date.getTime())) {
-                                              displayValue = formatDate(date);
+                                              displayValue = formatDate(date, {
+                                                includeTime: true,
+                                              });
                                             } else {
                                               displayValue = String(value);
                                             }
@@ -631,7 +631,9 @@ const AutomationHistory: React.FC<AutomationHistoryProps> = ({ automationId }) =
                                                     <Typography
                                                       sx={{ fontSize: 12, color: "#8594AC" }}
                                                     >
-                                                      {formatDate(action.executed_at)}
+                                                      {formatDate(new Date(action.executed_at), {
+                                                        includeTime: true,
+                                                      })}
                                                     </Typography>
                                                   </Stack>
                                                 )}

@@ -31,7 +31,7 @@ spec:
           type: RuntimeDefault
       containers:
       - name: frontend
-        image: ghcr.io/verifywise-ai/verifywise-frontend:latest
+        image: ghcr.io/verifywise-ai/verifywise-frontend:v2.5
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 80

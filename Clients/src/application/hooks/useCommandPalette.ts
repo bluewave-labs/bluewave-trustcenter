@@ -7,25 +7,19 @@ export const useCommandPalette = () => {
   const close = useCallback(() => setIsOpen(false), []);
   const toggle = useCallback(() => setIsOpen((prev) => !prev), []);
 
-  // Keyboard shortcut handler
+  // Cmd/Ctrl+K toggles the palette. Escape is owned by the overlay (Radix Dialog)
+  // so nested UI such as the status filter can intercept it first.
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Cmd+K or Ctrl+K
       if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
         toggle();
-      }
-
-      // Escape to close
-      if (e.key === "Escape" && isOpen) {
-        e.preventDefault();
-        close();
       }
     };
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, toggle, close]);
+  }, [toggle]);
 
   // Prevent body scroll when open
   useEffect(() => {

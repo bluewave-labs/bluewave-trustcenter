@@ -26,6 +26,7 @@ import {
   useUpdateScheduledReport,
   useDeleteScheduledReport,
 } from "../../../application/hooks/useReporting";
+import useFormattedDate from "../../../application/hooks/useFormattedDate";
 import { showAlert } from "../../../infrastructure/api/customAxios";
 
 const FREQUENCIES = ["daily", "weekly", "monthly"];
@@ -57,6 +58,7 @@ type Draft = {
 
 export default function ScheduledReportsTab() {
   const { data: rows = [] } = useScheduledReports();
+  const formatDate = useFormattedDate();
   const runNow = useRunNow();
   const setActive = useSetActive();
   const updateReport = useUpdateScheduledReport();
@@ -133,7 +135,7 @@ export default function ScheduledReportsTab() {
                   {scopeLabel(r.scope)}
                 </TableCell>
                 <TableCell sx={{ ...bodyCell, color: textColors.secondary }}>
-                  {r.next_run_at ? new Date(r.next_run_at).toLocaleString() : "—"}
+                  {r.next_run_at ? formatDate(new Date(r.next_run_at), { includeTime: true }) : "—"}
                 </TableCell>
                 <TableCell sx={bodyCell}>
                   <Chip

@@ -16,6 +16,7 @@ import type {
   SectionSummariesPayload,
   VendorRiskPayload,
 } from "../../../domain/interfaces/i.reporting";
+import useFormattedDate from "../../../application/hooks/useFormattedDate";
 
 interface ReportAnalysisPanelProps {
   /** Rows from GET /reporting/runs/:id/analyses. The caller owns the hook. */
@@ -301,6 +302,7 @@ function SummaryList({ entries }: { entries: Array<[string, string]> }) {
 
 function AnalysisCard({ analysis }: { analysis: ReportRunAnalysis }) {
   const theme = useTheme();
+  const formatDate = useFormattedDate();
   const label = SECTION_LABELS[analysis.section_key] ?? analysis.section_key;
   const abstainReason = abstainReasonOf(analysis.payload);
   const body = sectionBody(analysis.section_key, analysis.payload);
@@ -340,7 +342,7 @@ function AnalysisCard({ analysis }: { analysis: ReportRunAnalysis }) {
         <Box sx={{ pt: "12px", borderTop: `1px solid ${theme.palette.border.light}` }}>
           <Typography sx={{ fontSize: 11, color: theme.palette.text.accent, lineHeight: 1.4 }}>
             {analysis.analysis_model ?? "Model not recorded"} ·{" "}
-            {new Date(analysis.analyzed_at).toLocaleString()}
+            {formatDate(new Date(analysis.analyzed_at), { includeTime: true })}
           </Typography>
         </Box>
       </Stack>

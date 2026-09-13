@@ -140,11 +140,14 @@ export async function initObservability(): Promise<boolean> {
   });
 
   // Logs — sdk-logs 0.217 removed addLogRecordProcessor(); processors are
-  // supplied via the constructor.
+  // supplied via the constructor. sdk-logs 0.222 moved the exporter into the
+  // processor options object (BatchLogRecordProcessorOptions).
   loggerProvider = new LoggerProvider({
     resource,
     processors: [
-      new BatchLogRecordProcessor(new OTLPLogExporter({ url: `${base}/v1/logs`, headers })),
+      new BatchLogRecordProcessor({
+        exporter: new OTLPLogExporter({ url: `${base}/v1/logs`, headers }),
+      }),
     ],
   });
   logs.setGlobalLoggerProvider(loggerProvider);
