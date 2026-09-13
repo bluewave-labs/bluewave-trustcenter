@@ -742,12 +742,22 @@ When `MULTI_TENANCY_ENABLED=true` (and optionally `RLS_ENFORCEMENT_ENABLED=true`
 3. SuperAdmin can access cross-tenant data only through SuperAdmin routes.
 4. Shared/public links do not leak cross-tenant data.
 
-### 6.2 Run the backend isolation suite
+### 6.2 Run the isolation suites
 
 ```bash
-cd C:\Workspace\verifywise\Servers
-npm run test:integration -- tests/integration/tenant-isolation/
+cd Servers
+npm run test:integration -- --testPathPatterns=tenant-isolation
 ```
+
+```bash
+cd Clients
+npx vitest run src/test/mocks/__tests__/crossOrgGuard.test.ts \
+  src/application/repository/tests/crossOrg.network.test.ts \
+  src/presentation/pages/ProjectView/__tests__/ProjectView.crossOrg.network.test.tsx
+```
+
+How the tests work, how to add an entity and how to read their failures:
+`docs/technical/security/tenant-isolation.md` §6 and §8.
 
 ### 6.3 Quick manual curl smoke test
 
@@ -784,13 +794,13 @@ curl -X PATCH http://localhost:3000/api/projects/<org-a-project-id> \
 
 | Domain | Test file |
 |---|---|
-| Projects | `Servers/tests/integration/tenant-isolation/projects.isolation.test.ts` |
+| Projects, tasks, risks, files (generated from the registry) | `Servers/tests/integration/tenant-isolation/tenantIsolation.matrix.test.ts` |
+| Registry coverage guard | `Servers/tests/integration/tenant-isolation/tenantIsolation.coverage.test.ts` |
 | Vendors | `Servers/tests/integration/tenant-isolation/vendors.isolation.test.ts` |
-| Risks | `Servers/tests/integration/tenant-isolation/risks.isolation.test.ts` |
-| Tasks | `Servers/tests/integration/tenant-isolation/tasks.isolation.test.ts` |
-| Files | `Servers/tests/integration/tenant-isolation/files.isolation.test.ts` |
 | Evidence hub | `Servers/tests/integration/tenant-isolation/evidence-hub.isolation.test.ts` |
 | MRM | `Servers/tests/integration/tenant-isolation/mrm-*.isolation.test.ts` |
+| Frontend: cross-org 403 reaches the screen | `Clients/src/presentation/pages/ProjectView/__tests__/ProjectView.crossOrg.network.test.tsx` |
+| Frontend: by-id repositories under the guard | `Clients/src/application/repository/tests/crossOrg.network.test.ts` |
 
 ### 6.5 RLS Phase 2
 

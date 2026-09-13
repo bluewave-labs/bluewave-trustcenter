@@ -1,6 +1,6 @@
 # Clients — Frontend Development Guide
 
-> **Last Updated:** 2026-05-05
+> **Last Updated:** 2026-09-13
 
 ---
 
@@ -72,5 +72,6 @@ Read the relevant file BEFORE implementing changes in that area:
 | Redux, Axios, frontend architecture | `docs/technical/frontend/overview.md`         |
 | TypeScript standards & naming       | `CodeRules/02-typescript/`                    |
 | React component & hook conventions  | `CodeRules/03-react/`                         |
+| Cross-org isolation tests (MSW guard) | `docs/technical/security/tenant-isolation.md` §6.4 |
 
 > All `docs/` paths are relative to the repository root.
