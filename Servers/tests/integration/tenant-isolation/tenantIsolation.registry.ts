@@ -78,6 +78,7 @@ export const tenantIsolationRegistry: IsolationEntity[] = [
     name: "ai_incidents",
     tables: ["ai_incident_managements"],
     baseRoute: "/api/ai-incident-managements",
+    testFile: "incidents.isolation.test.ts",
   },
   {
     name: "vendors",
@@ -108,6 +109,7 @@ export const tenantIsolationRegistry: IsolationEntity[] = [
     name: "evidence_hub_org_settings",
     tables: ["evidence_hub_org_settings"],
     baseRoute: "/api/evidenceHub/settings",
+    testFile: "evidence-hub-retention.isolation.test.ts",
   },
   {
     name: "audit_ledger",
