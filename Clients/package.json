@@ -93,7 +93,7 @@
     "katex": "^0.18.7",
     "lucide-react": "^1.44.0",
     "papaparse": "^5.7.0",
-    "plotly.js-basic-dist": "^3.7.0",
+    "plotly.js-basic-dist": "^4.1.0",
     "prismjs": "^1.30.0",
     "react": "^19.3.0",
     "react-cookie": "^8.1.2",
