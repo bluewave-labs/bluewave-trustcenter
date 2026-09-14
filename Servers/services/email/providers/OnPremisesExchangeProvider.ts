@@ -11,7 +11,7 @@ import * as path from "path";
  * that require full control over their email infrastructure.
  */
 export class OnPremisesExchangeProvider implements EmailProvider {
-  private transporter: nodemailer.Transporter;
+  private transporter: ReturnType<typeof nodemailer.createTransport>;
   private config: OnPremisesExchangeConfig;
 
   constructor(config: OnPremisesExchangeConfig) {
