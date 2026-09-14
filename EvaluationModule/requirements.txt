@@ -7,7 +7,7 @@ pydantic>=2.13.5
 pyyaml>=6.0.3
 
 # Machine learning and fairness
-scikit-learn>=1.9.0
+scikit-learn>=1.9.1
 fairlearn>=0.14.0
 
 # Deep learning and transformers
