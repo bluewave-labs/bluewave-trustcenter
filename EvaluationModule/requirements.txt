@@ -7,11 +7,11 @@ pydantic>=2.13.5
 pyyaml>=6.0.3
 
 # Machine learning and fairness
-scikit-learn>=1.9.0
+scikit-learn>=1.9.1
 fairlearn>=0.14.0
 
 # Deep learning and transformers
-torch>=2.13.0,<3.0.0
+torch>=2.14.0,<3.0.0
 transformers>=5.15.1
 sentence-transformers>=6.0.1
 # huggingface-hub 1.16.3+ requires click>=8.4.0, which conflicts with deepeval's click<8.4.0 constraint.
@@ -36,15 +36,15 @@ python-dotenv>=1.2.3
 
 # LLM API Clients
 httpx>=0.27.0
-openai>=3.8.0
+openai>=3.13.0
 anthropic>=1.3.0
 google-generativeai>=0.8.6
 ollama>=0.6.2
 xai-sdk>=1.19.0
-mistralai>=2.9.4
+mistralai>=2.10.0
 
 # DeepEval for comprehensive LLM evaluation
-deepeval>=4.1.9
+deepeval>=4.2.2
 
 # Optional: GPU support (uncomment if using CUDA)
 # torch>=2.7.0+cu118 --extra-index-url https://download.pytorch.org/whl/cu118

@@ -2,7 +2,7 @@ import nodemailer from "nodemailer";
 import { EmailProvider, EmailOptions, EmailResult, SMTPConfig } from "../types";
 
 export class SMTPProvider implements EmailProvider {
-  private transporter: nodemailer.Transporter;
+  private transporter: ReturnType<typeof nodemailer.createTransport>;
   private config: SMTPConfig;
 
   constructor(config: SMTPConfig) {
