@@ -15,11 +15,14 @@ dotenv.config({ quiet: true });
 
 const CRITICAL_PATH_SPECS = /(use-cases|risk-management|tasks|critical-journey)\.spec\.ts/;
 const SUPER_ADMIN_SPECS = /super-admin\.spec\.ts/;
-// Accessibility scans for the key pages. These spec files are not matched by
-// any other project, so without this their axe tests never execute at all.
-// Tasks is deliberately absent: its scan already runs under the `admin`
-// project, and matching it here would run it twice.
-const A11Y_SCAN_SPECS = /[\\/](dashboard|model-inventory|vendors|policies)\.spec\.ts$/;
+// Feature-coverage specs that all run against the seeded org Admin auth state.
+// Deliberately excluded:
+//   - plugins.spec.ts: quarantined (targets the removed /plugins route,
+//     superseded by /extensions) pending rewrite — see the spec file.
+// Axe tests inside these files (titles matching /accessibility violations/)
+// are carved out via grepInvert and run once under the `a11y` project instead.
+const FEATURE_SPECS =
+  /[\\/](agent-discovery|ai-detection|ai-gateway|ai-trust-center|approval-workflows|assessment|automations|command-palette|compliance-tracker|dashboard|datasets|evals-dashboard|event-tracker|file-manager|frameworks|incidents|intake-forms|model-inventory|navigation|network-resilience|notifications|onboarding|overview|page-not-found|policies|policy-editor|post-market-monitoring|project-view|public-intake-form|reporting|settings|shadow-ai|start-here|training|vendors)\.spec\.ts$/;
 
 // When Playwright's bundled Chromium is not available (e.g. restricted CDN),
 // set PLAYWRIGHT_USE_SYSTEM_CHROME=1 to use the locally installed Google Chrome.
@@ -82,11 +85,27 @@ export default defineConfig({
         storageState: "e2e/.auth/admin.json",
       },
     },
+    // Feature-coverage tests: reuse the stored admin auth state. Axe tests
+    // inside these specs are excluded here (`grepInvert`) so they run exactly
+    // once — under the `a11y` project below.
+    {
+      name: "features",
+      testMatch: FEATURE_SPECS,
+      grepInvert: /accessibility violations/,
+      dependencies: ["setup"],
+      use: {
+        ...devices["Desktop Chrome"],
+        channel: browserChannel,
+        storageState: "e2e/.auth/admin.json",
+      },
+    },
     // Accessibility scans only. `grep` keeps this to the axe tests rather than
-    // switching on the rest of each spec file at the same time.
+    // switching on the rest of each spec file at the same time. Covers every
+    // feature spec; critical-path specs are deliberately absent since their
+    // scans already run under the `admin` project.
     {
       name: "a11y",
-      testMatch: A11Y_SCAN_SPECS,
+      testMatch: FEATURE_SPECS,
       grep: /accessibility violations/,
       dependencies: ["setup"],
       use: {

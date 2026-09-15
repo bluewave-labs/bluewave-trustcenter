@@ -1,7 +1,12 @@
 import { test, expect } from "./fixtures/auth.fixture";
 import AxeBuilder from "@axe-core/playwright";
 
-test.describe("Plugins", () => {
+// QUARANTINED: the /plugins route was removed — the page now lives at
+// /extensions with a different heading and tab structure, so these tests
+// would fail or silently pass against the 404 page. Excluded from every
+// project in playwright.config.ts. Pending rewrite against /extensions
+// (e2e maintenance owner: Debora).
+test.describe.skip("Plugins", () => {
   test("renders the plugins page", async ({ authedPage: page }) => {
     await page.goto("/plugins");
     await expect(page).toHaveURL(/\/plugins/);

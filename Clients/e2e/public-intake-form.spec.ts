@@ -8,9 +8,11 @@ import AxeBuilder from "@axe-core/playwright";
  */
 const test = base.extend<{ publicFormUrl: string | null }>({
   publicFormUrl: async ({ browser }, use) => {
-    // Use authenticated context to discover a public form URL
+    // Use authenticated context to discover a public form URL. This must be
+    // the org-admin state: the bootstrap super-admin (user.json) is pinned to
+    // /super-admin by ProtectedRoute and redirected away from /intake-forms.
     const authContext = await browser.newContext({
-      storageState: "e2e/.auth/user.json",
+      storageState: "e2e/.auth/admin.json",
     });
     const authPage = await authContext.newPage();
 
