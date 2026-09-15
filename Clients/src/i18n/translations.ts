@@ -1171,6 +1171,9 @@ export const translations: Record<string, Record<string, string>> = {
     "AI project": "KI-Projekt",
     "AI Project": "KI-Projekt",
     "AI PROJECT": "KI-PROJEKT",
+    "Affected model": "Betroffenes Modell",
+    "AFFECTED MODEL": "BETROFFENES MODELL",
+    "Select model from inventory": "Modell aus dem Inventar auswählen",
     "Project": "Projekt",
     "Create a new use case by filling in the following details":
       "Erstellen Sie einen neuen Anwendungsfall, indem Sie die folgenden Angaben ausfüllen",
@@ -9267,6 +9270,13 @@ export const translations: Record<string, Record<string, string>> = {
     "View lifecycle": "Lebenszyklus anzeigen",
     "Workspace disconnected successfully!": "Workspace erfolgreich getrennt!",
     "Workspace status updated successfully!": "Workspace-Status erfolgreich aktualisiert!",
+    "Add first user": "Ersten Benutzer hinzufügen",
+    "Add user": "Benutzer hinzufügen",
+    "Create directly": "Direkt erstellen",
+    "Enter or generate": "Eingeben oder generieren",
+    "Invite via email": "Per E-Mail einladen",
+    "Must include an uppercase letter, a lowercase letter, and a digit. Minimum 8 characters.":
+      "Muss einen Großbuchstaben, einen Kleinbuchstaben und eine Ziffer enthalten. Mindestens 8 Zeichen.",
   },
 
   fr: {
@@ -10623,6 +10633,9 @@ export const translations: Record<string, Record<string, string>> = {
     "Deadline view": "Vue des échéances",
     "Operations view": "Vue opérationnelle",
     "AI PROJECT": "PROJET IA",
+    "Affected model": "Modèle affecté",
+    "AFFECTED MODEL": "MODÈLE AFFECTÉ",
+    "Select model from inventory": "Sélectionner un modèle dans l'inventaire",
     "How deadlines work": "Comment fonctionnent les échéances",
     "Open any task and set a due date. It will automatically appear in the correct deadline group on this view.":
       "Ouvrez une tâche et définissez une date d'échéance. Elle apparaîtra automatiquement dans le bon groupe d'échéance sur cette vue.",
@@ -18464,6 +18477,13 @@ export const translations: Record<string, Record<string, string>> = {
     "Workspace disconnected successfully!": "Espace de travail déconnecté avec succès !",
     "Workspace status updated successfully!":
       "Statut de l'espace de travail mis à jour avec succès !",
+    "Add first user": "Ajouter le premier utilisateur",
+    "Add user": "Ajouter un utilisateur",
+    "Create directly": "Créer directement",
+    "Enter or generate": "Saisir ou générer",
+    "Invite via email": "Inviter par e-mail",
+    "Must include an uppercase letter, a lowercase letter, and a digit. Minimum 8 characters.":
+      "Doit contenir une majuscule, une minuscule et un chiffre. Minimum 8 caractères.",
   },
   es: {
     "Deployment name": "Nombre del despliegue",
@@ -19343,6 +19363,9 @@ export const translations: Record<string, Record<string, string>> = {
     "AI project": "Proyecto de IA",
     "AI Project": "Proyecto de IA",
     "AI PROJECT": "PROYECTO DE IA",
+    "Affected model": "Modelo afectado",
+    "AFFECTED MODEL": "MODELO AFECTADO",
+    "Select model from inventory": "Seleccionar modelo del inventario",
     "Project": "Proyecto",
     "How deadlines work": "Cómo funcionan los plazos",
     "Tasks in a filterable table": "Tareas en una tabla filtrable",
@@ -27580,5 +27603,12 @@ export const translations: Record<string, Record<string, string>> = {
     "Workspace disconnected successfully!": "¡Espacio de trabajo desconectado correctamente!",
     "Workspace status updated successfully!":
       "¡Estado del espacio de trabajo actualizado correctamente!",
+    "Add first user": "Añadir primer usuario",
+    "Add user": "Añadir usuario",
+    "Create directly": "Crear directamente",
+    "Enter or generate": "Introducir o generar",
+    "Invite via email": "Invitar por correo",
+    "Must include an uppercase letter, a lowercase letter, and a digit. Minimum 8 characters.":
+      "Debe incluir una mayúscula, una minúscula y un dígito. Mínimo 8 caracteres.",
   },
 };

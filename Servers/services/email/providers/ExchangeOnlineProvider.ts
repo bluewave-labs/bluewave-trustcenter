@@ -8,7 +8,7 @@ import { EmailProvider, EmailOptions, EmailResult, ExchangeOnlineConfig } from "
  * Uses SMTP with Office 365 authentication.
  */
 export class ExchangeOnlineProvider implements EmailProvider {
-  private transporter: nodemailer.Transporter;
+  private transporter: ReturnType<typeof nodemailer.createTransport>;
   private config: ExchangeOnlineConfig;
 
   constructor(config: ExchangeOnlineConfig) {
