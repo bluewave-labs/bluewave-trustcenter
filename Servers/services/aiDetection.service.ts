@@ -32,8 +32,10 @@ import {
   IFindingsResponse,
   IScansResponse,
   IScanStatusResponse,
+  IRiskScoreDetails,
   GovernanceStatus,
   IUpdateGovernanceStatusResponse,
+  RiskGrade,
 } from "../domain.layer/interfaces/i.aiDetection";
 import {
   ValidationException,
@@ -2288,8 +2290,8 @@ export async function getScan(scanId: number, ctx: IServiceContext): Promise<ISc
       error_message: scan.error_message || undefined,
       triggered_by: scan.triggered_by_user,
       risk_score: scan.risk_score != null ? parseFloat(String(scan.risk_score)) : null,
-      risk_score_grade: scan.risk_score_grade ?? null,
-      risk_score_details: scan.risk_score_details ?? null,
+      risk_score_grade: (scan.risk_score_grade as RiskGrade | null | undefined) ?? null,
+      risk_score_details: (scan.risk_score_details as IRiskScoreDetails | null | undefined) ?? null,
       risk_score_calculated_at: scan.risk_score_calculated_at
         ? (scan.risk_score_calculated_at as Date).toISOString()
         : null,
@@ -2405,7 +2407,7 @@ export async function getScans(
       duration_ms: s.duration_ms || undefined,
       triggered_by: s.triggered_by_user,
       risk_score: s.risk_score != null ? parseFloat(String(s.risk_score)) : null,
-      risk_score_grade: s.risk_score_grade ?? null,
+      risk_score_grade: (s.risk_score_grade as RiskGrade | null | undefined) ?? null,
       scan_mode: s.scan_mode,
       baseline_scan_id: s.baseline_scan_id ?? null,
       changed_files_count: s.changed_files_count ?? null,

@@ -621,13 +621,7 @@ export async function calculateAndStoreRiskScore(
         details.dimensions[dim.key] = { score: 100, penalty_count: 0, top_contributors: [] };
       }
       const { grade, label } = getGradeForScore(100);
-      await updateScanRiskScoreQuery(
-        scanId,
-        100,
-        grade,
-        details as unknown as Record<string, unknown>,
-        ctx.organizationId,
-      );
+      await updateScanRiskScoreQuery(scanId, 100, grade, details, ctx.organizationId);
       return { score: 100, grade, label, details };
     }
 
@@ -683,13 +677,7 @@ export async function calculateAndStoreRiskScore(
     };
 
     // 7. Store in database
-    await updateScanRiskScoreQuery(
-      scanId,
-      overallScore,
-      grade,
-      details as unknown as Record<string, unknown>,
-      ctx.organizationId,
-    );
+    await updateScanRiskScoreQuery(scanId, overallScore, grade, details, ctx.organizationId);
 
     logger.info(`Risk score calculated for scan ${scanId}: ${overallScore} (${grade})`);
 

@@ -9,6 +9,7 @@
 import { sequelize } from "../database/db";
 import { QueryTypes } from "sequelize";
 import { DimensionKey, DEFAULT_DIMENSION_WEIGHTS } from "../config/riskScoringConfig";
+import type { IRiskScoreDetails } from "../domain.layer/interfaces/i.aiDetection";
 
 // ============================================================================
 // Organization ID Validation
@@ -297,7 +298,7 @@ export async function updateScanRiskScoreQuery(
   scanId: number,
   score: number,
   grade: string,
-  details: Record<string, unknown>,
+  details: IRiskScoreDetails,
   organizationId: number,
 ): Promise<void> {
   validateOrganizationId(organizationId);
