@@ -1,8 +1,8 @@
 # Tenant Isolation Security Runbook
 
-> **Scope:** VerifyWise Node/TypeScript backend (`Servers/`).  
+> **Scope:** VerifyWise Node/TypeScript backend (`Servers/`), plus the frontend isolation tests in `Clients/` (§6.4).  
 > **Policy owner:** Technical Lead / Security reviewer  
-> **Last updated:** 2026-06-22
+> **Last updated:** 2026-09-13
 
 ## 1. Purpose
 
@@ -246,51 +246,150 @@ const query = `
 
 ## 6. Testing Guidance
 
-### Isolation test matrix
+Isolation is tested at two layers:
 
-All tenant-scoped entities must have an integration test file under:
+| Layer    | What it proves                                                                                                                                                 | Where                                          |
+| -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| Backend  | A user in one organization cannot list, read, update, delete or create-into another organization's data, against a real database.                               | `Servers/tests/integration/tenant-isolation/`  |
+| Frontend | When the API refuses a cross-organization request, the UI shows the error and never renders the other organization's data.                                      | `Clients/src/test/mocks/crossOrgGuard.ts` and its tests |
 
-```text
-Servers/tests/integration/tenant-isolation/{entity}.isolation.test.ts
+### 6.1 What every backend isolation test checks
+
+Each test seeds two fresh organizations with one user each. The **owner** seeds a row; the **attacker**, from the other organization, tries the operation against it.
+
+| Op     | Attacker must get                                                      | Owner positive control                  | Extra check                                                  |
+| ------ | ---------------------------------------------------------------------- | --------------------------------------- | ------------------------------------------------------------ |
+| list   | A list with **no** rows (status `200` by default)                      | Same list, `200`, at least one row      | —                                                            |
+| read   | A denial status (`404` by default)                                     | Same `GET`, `200`                       | —                                                            |
+| update | A denial status (`403` or `404` by default), using the route's real verb | Same request, `2xx`                   | Row unchanged (SQL snapshot before vs after)                 |
+| delete | A denial status (`403` or `404` by default)                            | Same request, `2xx`                     | Row unchanged, which also catches a soft delete               |
+| create | —                                                                      | `POST` carrying the other org's `organization_id` succeeds | The new row is stamped with the owner's organization |
+
+**Why the owner control exists.** Express answers a route or verb that doesn't exist with its own `404`, which looks identical to a tenancy `404`. Before #4501 the harness sent both `PUT` and `PATCH` and accepted `404`, so tasks `PATCH` and projects `PUT`, neither of which has a route, passed as "denied" without testing anything. Every denial is now paired with the owner doing the same thing successfully. A missing route therefore fails with `Positive control failed: …` instead of passing.
+
+SuperAdmin bypass (§3) is **not yet covered** by the isolation tests.
+
+### 6.2 The generated matrix
+
+Conventional CRUD entities are tested by one generated suite rather than a file each:
+
+| File                             | Role                                                                                     |
+| -------------------------------- | ---------------------------------------------------------------------------------------- |
+| `tenantIsolation.registry.ts`    | Every tenant-scoped entity. Entries built with `crudEntity(...)` carry a `matrix` spec.   |
+| `tenantIsolation.fixtures.ts`    | Per entity: how to seed an owned row, and the update/create payloads.                     |
+| `tenantIsolation.matrix.ts`      | `crudEntity(...)` and the spec types.                                                     |
+| `tenantIsolation.matrix.test.ts` | Generates the five tests above for every entry with a `matrix` spec.                      |
+| `tenantIsolation.harness.ts`     | Seeding and the assertions (`assertReadDenied`, `assertUpdateDenied`, …).                 |
+| `tenantIsolation.coverage.test.ts` | Fails if a registry entry has neither a `matrix` spec nor a hand-written test file.    |
+
+Projects, tasks, risks and files are covered by the matrix. The other entries have hand-written `*.isolation.test.ts` files.
+
+The registry is also imported by the schema-drift audit script (§7), so it and the fixtures must **never import the harness at runtime**: the harness loads the whole test app. Import its types with `import type`.
+
+### 6.3 Adding an entity
+
+The vendor example below is a sketch of the shape. Vendors still use a hand-written test file, so check the controller's validation for the real payload fields before moving them.
+
+**1. Add a fixture** to `tenantIsolation.fixtures.ts`:
+
+```typescript
+export const vendorFixture: EntityFixture = {
+  seed: (ctx) => createTestVendor(ctx.orgId),
+  // Must be valid: the owner's positive control sends it too.
+  updatePayload: () => ({ vendor_name: "Updated by isolation matrix" }),
+  // Carry the other org's id; the server must ignore it.
+  createPayload: (owner, foreignOrgId) => ({
+    vendor_name: "Cross-tenant vendor",
+    organization_id: foreignOrgId,
+  }),
+};
 ```
 
-Each test file must verify:
+**2. Add one registry entry:**
 
-1. **List** returns only records in the caller's organization.
-2. **GET by id** for another organization's record returns `404` (or `403` where explicitly documented).
-3. **PUT/PATCH/DELETE** for another organization's record returns `404` or `403`.
-4. **Create** ignores a foreign `organization_id` in the request body and stamps the caller's organization.
-5. **SuperAdmin bypass** is limited to explicitly allowed routes.
-
-### Registry
-
-Add new scoped entities to:
-
-```text
-Servers/tests/integration/tenant-isolation/tenantIsolation.registry.ts
+```typescript
+crudEntity("vendors", "/api/vendors", ["vendors", "vendors_projects"], vendorFixture),
 ```
 
-The schema-drift audit script reads this registry. If you add a table with `organization_id` but do not register it, CI will fail.
+That produces all five tests. `crudEntity` assumes `GET base`, `GET | PATCH | DELETE base/:id` and `POST base`. Describe any difference as an override, never as special-case test code:
 
-### Running the matrix locally
+| Override                            | Use when                                                   | In use today                                                       |
+| ----------------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------------ |
+| `updateVerb: "PUT"`                 | The update route is `PUT` only (default `PATCH`)            | tasks, risks                                                       |
+| `routes: { update, delete, create }` | An operation lives on a different route                   | files: update, delete and create on `/api/file-manager`             |
+| `denial: { read, write }`           | The controller answers a foreign id with another status    | risks `read: [204, 404]`; files `read: [403, 404]`                  |
+| `attackerListStatuses`              | An empty list isn't `200`                                   | risks `[200, 204]`                                                  |
+| `extractItems` / `extractCreatedId` | The list or create response has an unusual shape            | projects `data.project.id`                                          |
+| `primaryTable`                      | The seeded id isn't in `tables[0]`                          | —                                                                   |
+| `skip: { op: "reason" }`            | An operation genuinely can't be exercised. The reason is required and shows as a skipped test | — |
+
+Fixtures can also return payloads asynchronously (risk create needs a real project), and can supply `createRequest` for creates a JSON body can't reach, such as the files multipart upload.
+
+**Never widen `denial` or add a `skip` to make a failing test pass.** A failing owner control means the route, verb or payload is wrong. A failing attacker check is a cross-tenant leak: treat it as P0 and fix the backend.
+
+**When a hand-written test file is still right.** Use one when the entity has no conventional CRUD surface: settings singletons, append-only ledgers, multi-step pipelines. Name it `{name, with _ replaced by -}.isolation.test.ts`, or set `testFile` on the registry entry when another file covers it (the two MRM settings entries point at `mrm-alerts.isolation.test.ts`). Build it from the harness assertions so it gets the same owner controls.
+
+### 6.4 Frontend: the cross-organization guard
+
+`Clients/src/test/mocks/crossOrgGuard.ts` is an opt-in MSW guard that answers a request for another organization's record with `403 { message: "Forbidden", data: "Access denied" }`, the way a tenant-scoped backend would.
+
+```typescript
+beforeEach(() => signInAs(OWN_ORG_ID));
+afterEach(() => signOut());
+
+it("shows the error and never renders Org B's project", async () => {
+  server.use(...crossOrgGuard());
+  renderWithProviders(<><AlertHost /><ProjectView /></>, {
+    route: `/project-view?projectId=${mockForeignProject.id}`,
+  });
+  expect(await screen.findByRole("alert")).toHaveTextContent("Access denied");
+  expect(document.body).not.toHaveTextContent(mockForeignProject.project_title);
+});
+```
+
+- **Caller identity.** `signInAs(orgId)` puts an unsigned fake JWT in the Redux store, and the guard decodes the `Authorization` header that customAxios sends, using the app's own `extractUserToken`. `crossOrgGuard({ callerOrgId })` is the fallback. If the guard can't identify the caller it throws (a `500`) rather than letting everything through.
+- **What falls through** to the normal handlers: the caller's own records, unknown ids, and literal segments such as `/file-manager/search`.
+- **Foreign data.** `data/foreignOrg.ts` holds one Org B record per entity (ids 9001–9004, with distinctive text). By-id handlers serve them, like a backend without scoping, but lists never include them. A test run without the guard therefore shows exactly what would leak.
+- **Toasts.** `renderWithProviders` doesn't mount App's toast host. Render `<AlertHost />` from `Clients/src/test/AlertHost.tsx` next to the component.
+
+**Adding an entity:**
+1. Add its by-id paths and records to `CROSS_ORG_ENTITIES`.
+2. Add a foreign record to `data/foreignOrg.ts`.
+3. Make the entity's by-id handlers look records up with `byId(...)`.
+4. Add a row to the `CASES` tables in `test/mocks/__tests__/crossOrgGuard.test.ts` and `application/repository/tests/crossOrg.network.test.ts`. Both have completeness checks that fail until you do.
+
+**Pitfalls:**
+
+- **Logout details.** A 403 whose detail is `"User does not belong to this organization"` or `"Not allowed to access"` makes customAxios log the user out instead of showing a toast. The guard refuses both.
+- **403 vs 404.** The real backend answers a foreign id with `404` (§6.1), and customAxios deliberately shows **no** toast for `404`. Test both: `crossOrgGuard({ status: 404 })`.
+- **Assert on text the UI actually renders.** The project view renders `project_title`, which the mock projects didn't have, so a leak would have rendered blank and a "never renders" assertion would have passed anyway. Always include a control test **without** the guard that shows the foreign text rendering.
+- **Signed-in pages make extra requests.** The approval-request badges (`/api/approval-requests/pending-approvals` and `/my-requests`) fire once a user is signed in. Unhandled requests fail as network errors, and customAxios shows a generic "An error occurred" toast that can be mistaken for the one under test. Stub them.
+
+### 6.5 Running locally
+
+The integration suite truncates every table it touches. Point `Servers/.env.test` at a dedicated test database; the global setup refuses to run against the database named in `Servers/.env`.
 
 ```bash
 cd Servers
-npm run test:integration -- --testPathPattern=tenant-isolation
+npm run test:integration -- --testPathPatterns=tenant-isolation            # everything
+npm run test:integration -- --testPathPatterns='tenantIsolation\.(matrix|coverage)'  # generated suite + guard
+npx ts-node scripts/auditTenantIsolationCoverage.ts                         # schema-drift audit
 ```
-
-### Running the schema-drift audit locally
 
 ```bash
-cd Servers
-npx ts-node scripts/auditTenantIsolationCoverage.ts
+cd Clients
+npx vitest run src/test/mocks/__tests__/crossOrgGuard.test.ts \
+  src/application/repository/tests/crossOrg.network.test.ts \
+  src/presentation/pages/ProjectView/__tests__/ProjectView.crossOrg.network.test.tsx
 ```
+
+If your test database shares a Postgres server with your development database, leave `DB_APP_PASSWORD` **unset** locally. The `verifywise_app` role is server-wide, and `20260721090000-rls-app-role.js` resets its password whenever the variable is set. Unset, the migration skips while `RLS_ENFORCEMENT_ENABLED` is off.
 
 ## 7. Schema-Drift CI Gate
 
-The CI gate (`tenant-isolation` job in `.github/workflows/backend-checks.yml`) does two things:
+The CI gate (`tenant-isolation-tests` job in `.github/workflows/backend-checks.yml`) does two things:
 
-1. Runs the isolation test matrix.
+1. Runs everything under `tests/integration/tenant-isolation/`: the generated matrix, the coverage guard and the hand-written isolation tests.
 2. Runs `npx ts-node scripts/auditTenantIsolationCoverage.ts`, which:
    - Connects to the migrated test database.
    - Queries `information_schema.columns` for every table that has an `organization_id` column.
@@ -324,13 +423,50 @@ Do not merge a PR that adds a scoped table without also updating the registry.
 - Verify `asyncLocalStorage` store is not lost across an `await` boundary.
 - In tests, verify `mockUser.organizationId` is set.
 
+### `Positive control failed: owner <VERB> <route> returned 404`
+
+Not a leak. The owner could not do the operation either, so the test can't tell whether the attacker was denied. Check, in order:
+
+1. Does the route have that verb? Set `updateVerb`, or override `routes`.
+2. Is the fixture's payload valid for the owner?
+3. Does the seeded row satisfy what the endpoint needs?
+
+### An attacker assertion fails (e.g. `expected [403, 404] to contain 200`)
+
+A cross-tenant leak. Treat it as P0: fix the query or controller to scope by `req.organizationId`. Do not widen `denial`.
+
+### The owner's list comes back empty
+
+The list query filters or joins in a way the seeded row doesn't satisfy. For example, the `/api/files` list inner-joins `projects`, so a file without a `project_id` never appears (the file fixture attaches uploads to a project). Fix the fixture, not the assertion.
+
+### Coverage guard: `Registry entry "…" has no matrix spec and no … .isolation.test.ts`
+
+Add the entity with `crudEntity(...)` and a fixture, write that test file, or set `testFile` on the entry to the file that covers it.
+
+### Frontend test shows "An error occurred. Please try again later"
+
+That is customAxios's toast for a network error or a `5xx`, not a cross-org denial. The usual cause is a request with no handler: MSW runs with `onUnhandledRequest: "error"`. Find it by logging `server.events` (`request:unhandled`) and stub it. The approval-request badges are the common one (§6.4).
+
+### Frontend test gets a `500` mentioning `no decodable bearer token`
+
+The guard couldn't identify the caller. Call `signInAs(orgId)` before the request, keep `signOut()` in `afterEach` rather than mid-test, or pass `callerOrgId`.
+
 ## 9. Related Files
 
 | Purpose                    | Path                                                                     |
 | -------------------------- | ------------------------------------------------------------------------ |
 | Isolation test registry    | `Servers/tests/integration/tenant-isolation/tenantIsolation.registry.ts` |
 | Isolation test harness     | `Servers/tests/integration/tenant-isolation/tenantIsolation.harness.ts`  |
+| Matrix builder and types   | `Servers/tests/integration/tenant-isolation/tenantIsolation.matrix.ts`   |
+| Per-entity fixtures        | `Servers/tests/integration/tenant-isolation/tenantIsolation.fixtures.ts` |
+| Generated matrix suite     | `Servers/tests/integration/tenant-isolation/tenantIsolation.matrix.test.ts` |
+| Registry coverage guard    | `Servers/tests/integration/tenant-isolation/tenantIsolation.coverage.test.ts` |
 | Schema-drift audit         | `Servers/scripts/auditTenantIsolationCoverage.ts`                        |
+| Frontend cross-org guard   | `Clients/src/test/mocks/crossOrgGuard.ts`                                |
+| Frontend foreign fixtures  | `Clients/src/test/mocks/data/foreignOrg.ts`                              |
+| Test toast host            | `Clients/src/test/AlertHost.tsx`                                         |
+| Frontend isolation tests   | `Clients/src/test/mocks/__tests__/crossOrgGuard.test.ts`, `Clients/src/application/repository/tests/crossOrg.network.test.ts`, `Clients/src/presentation/pages/ProjectView/__tests__/ProjectView.crossOrg.network.test.tsx` |
+| customAxios (toasts, logout-on-403) | `Clients/src/infrastructure/api/customAxios.ts`                 |
 | Integration test setup     | `Servers/tests/integration/setup.ts`                                     |
 | Integration test helpers   | `Servers/tests/integration/helpers.ts`                                   |
 | Auth middleware            | `Servers/middleware/auth.middleware.ts`                                  |

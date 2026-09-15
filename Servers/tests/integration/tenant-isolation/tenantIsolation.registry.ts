@@ -4,11 +4,21 @@
  * This file declares every tenant-scoped entity covered by the cross-tenant
  * isolation test matrix and the schema-drift CI gate.
  *
- * Adding a new scoped entity should require one entry here, one factory, and
- * one thin per-entity test file that imports the reusable harness.
+ * Entries built with `crudEntity(...)` carry a `matrix` spec, and
+ * tenantIsolation.matrix.test.ts generates their list / read / update /
+ * delete / create isolation tests. Adding a conventional entity is one line
+ * here plus a fixture in tenantIsolation.fixtures.ts. Entries without a
+ * `matrix` spec are covered by a hand-written `{name}.isolation.test.ts`.
+ *
+ * The schema-drift audit script imports this file, so it must never import
+ * the harness (which loads the whole test app) at runtime.
  *
  * @see docs/technical/security/tenant-isolation.md
  */
+
+import { crudEntity } from "./tenantIsolation.matrix";
+import type { MatrixSpec } from "./tenantIsolation.matrix";
+import { fileFixture, projectFixture, riskFixture, taskFixture } from "./tenantIsolation.fixtures";
 
 export interface IsolationEntity {
   /** Human-readable entity name (kebab-case). */
@@ -17,6 +27,16 @@ export interface IsolationEntity {
   tables: string[];
   /** Base REST route for the entity. */
   baseRoute: string;
+  /**
+   * Declarative isolation spec. Entries built with `crudEntity(...)` have one
+   * and are tested by tenantIsolation.matrix.test.ts.
+   */
+  matrix?: MatrixSpec;
+  /**
+   * Hand-written test file covering this entry, when it isn't the default
+   * `{name with _ → -}.isolation.test.ts`. Checked by tenantIsolation.coverage.test.ts.
+   */
+  testFile?: string;
 }
 
 /**
@@ -27,35 +47,38 @@ export interface IsolationEntity {
  * allow-list in `scripts/auditTenantIsolationCoverage.ts`.
  */
 export const tenantIsolationRegistry: IsolationEntity[] = [
-  {
-    name: "projects",
-    tables: ["projects"],
-    baseRoute: "/api/projects",
-  },
-  {
-    name: "files",
-    tables: ["files"],
-    baseRoute: "/api/files",
-  },
+  crudEntity("projects", "/api/projects", ["projects"], projectFixture, {
+    extractCreatedId: (res) => res.body?.data?.project?.id,
+  }),
+  // Update, delete and create live on the file-manager routes (same `files` table);
+  // /api/files has only list and the Admin-only download.
+  crudEntity("files", "/api/files", ["files"], fileFixture, {
+    routes: {
+      update: (id) => `/api/file-manager/${id}/metadata`,
+      delete: (id) => `/api/file-manager/${id}`,
+      create: "/api/file-manager",
+    },
+    denial: { read: [403, 404] },
+  }),
   {
     name: "users",
     tables: ["users"],
     baseRoute: "/api/users",
   },
-  {
-    name: "risks",
-    tables: ["risks", "projects_risks"],
-    baseRoute: "/api/projectRisks",
-  },
-  {
-    name: "tasks",
-    tables: ["tasks", "task_assignees"],
-    baseRoute: "/api/tasks",
-  },
+  // The risks controller answers "not found" and an empty list with 204.
+  crudEntity("risks", "/api/projectRisks", ["risks", "projects_risks"], riskFixture, {
+    updateVerb: "PUT",
+    denial: { read: [204, 404] },
+    attackerListStatuses: [200, 204],
+  }),
+  crudEntity("tasks", "/api/tasks", ["tasks", "task_assignees"], taskFixture, {
+    updateVerb: "PUT",
+  }),
   {
     name: "ai_incidents",
     tables: ["ai_incident_managements"],
     baseRoute: "/api/ai-incident-managements",
+    testFile: "incidents.isolation.test.ts",
   },
   {
     name: "vendors",
@@ -86,6 +109,7 @@ export const tenantIsolationRegistry: IsolationEntity[] = [
     name: "evidence_hub_org_settings",
     tables: ["evidence_hub_org_settings"],
     baseRoute: "/api/evidenceHub/settings",
+    testFile: "evidence-hub-retention.isolation.test.ts",
   },
   {
     name: "audit_ledger",
@@ -156,11 +180,13 @@ export const tenantIsolationRegistry: IsolationEntity[] = [
     name: "mrm_org_settings",
     tables: ["mrm_org_settings"],
     baseRoute: "/api/mrm/settings",
+    testFile: "mrm-alerts.isolation.test.ts",
   },
   {
     name: "mrm_alert_recipients",
     tables: ["mrm_alert_recipients"],
     baseRoute: "/api/mrm/settings",
+    testFile: "mrm-alerts.isolation.test.ts",
   },
   {
     name: "report_templates",

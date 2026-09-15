@@ -9,6 +9,7 @@
 
 export interface MockFile {
   id: number;
+  organization_id: number;
   filename: string;
   size: number;
   formattedSize: string;
@@ -30,6 +31,7 @@ export interface MockFile {
 export function createMockFile(overrides: Partial<MockFile> = {}): MockFile {
   return {
     id: 1,
+    organization_id: 1,
     filename: "data-retention-policy.pdf",
     size: 20480,
     formattedSize: "20 KB",

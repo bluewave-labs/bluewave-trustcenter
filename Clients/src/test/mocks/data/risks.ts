@@ -1,5 +1,6 @@
 export interface MockRisk {
   id: number;
+  organization_id: number;
   title: string;
   description: string;
   severity: "low" | "medium" | "high" | "critical";
@@ -14,6 +15,7 @@ export interface MockRisk {
 export function createMockRisk(overrides: Partial<MockRisk> = {}): MockRisk {
   return {
     id: 1,
+    organization_id: 1,
     title: "Model Bias in Hiring Algorithm",
     description: "Potential discriminatory outcomes from biased training data",
     severity: "high",

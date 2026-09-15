@@ -1,6 +1,9 @@
 export interface MockProject {
   id: number;
+  organization_id: number;
   name: string;
+  /** The field the real API returns and the UI renders (e.g. the project view header). */
+  project_title: string;
   description: string;
   status: string;
   startDate: string;
@@ -10,9 +13,13 @@ export interface MockProject {
 }
 
 export function createMockProject(overrides: Partial<MockProject> = {}): MockProject {
+  const name = overrides.name ?? "AI Governance Assessment";
   return {
     id: 1,
-    name: "AI Governance Assessment",
+    organization_id: 1,
+    name,
+    // Mirrors `name` unless overridden, so a test asserting on either sees the same text.
+    project_title: name,
     description: "Comprehensive AI governance and compliance assessment project",
     status: "active",
     startDate: "2026-01-15T00:00:00Z",

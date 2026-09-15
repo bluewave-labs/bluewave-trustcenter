@@ -1,6 +1,6 @@
 # Clients — Frontend Development Guide
 
-> **Last Updated:** 2026-05-05
+> **Last Updated:** 2026-09-13
 
 ---
 
@@ -62,15 +62,16 @@ npm run test                     # Vitest
 
 Read the relevant file BEFORE implementing changes in that area:
 
-| When working on...                  | Read this file                                |
-| ----------------------------------- | --------------------------------------------- |
-| Component/page/hook patterns        | `docs/technical/guides/frontend-patterns.md`  |
-| Adding a new feature (full guide)   | `docs/technical/guides/adding-new-feature.md` |
-| MUI theming & design tokens         | `docs/technical/guides/design-tokens.md`      |
-| Frontend styling                    | `docs/technical/frontend/styling.md`          |
-| Frontend components                 | `docs/technical/frontend/components.md`       |
-| Redux, Axios, frontend architecture | `docs/technical/frontend/overview.md`         |
-| TypeScript standards & naming       | `CodeRules/02-typescript/`                    |
-| React component & hook conventions  | `CodeRules/03-react/`                         |
+| When working on...                    | Read this file                                     |
+| ------------------------------------- | -------------------------------------------------- |
+| Component/page/hook patterns          | `docs/technical/guides/frontend-patterns.md`       |
+| Adding a new feature (full guide)     | `docs/technical/guides/adding-new-feature.md`      |
+| MUI theming & design tokens           | `docs/technical/guides/design-tokens.md`           |
+| Frontend styling                      | `docs/technical/frontend/styling.md`               |
+| Frontend components                   | `docs/technical/frontend/components.md`            |
+| Redux, Axios, frontend architecture   | `docs/technical/frontend/overview.md`              |
+| TypeScript standards & naming         | `CodeRules/02-typescript/`                         |
+| React component & hook conventions    | `CodeRules/03-react/`                              |
+| Cross-org isolation tests (MSW guard) | `docs/technical/security/tenant-isolation.md` §6.4 |
 
 > All `docs/` paths are relative to the repository root.
