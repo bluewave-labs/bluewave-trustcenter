@@ -97,7 +97,20 @@ function makeScan(overrides: Partial<Scan> = {}): Scan {
 function makeScanResponse(overrides: Partial<Scan> = {}): ScanResponse {
   return {
     scan: makeScan(overrides),
-    summary: { total: 5, by_confidence: { high: 3, medium: 1, low: 1 }, by_provider: {} },
+    summary: {
+      total: 5,
+      by_confidence: { high: 3, medium: 1, low: 1 },
+      by_provider: {},
+      by_finding_type: {
+        library: 5,
+        dependency: 0,
+        api_call: 0,
+        secret: 0,
+        model_ref: 0,
+        rag_component: 0,
+        agent: 0,
+      },
+    },
   };
 }
 

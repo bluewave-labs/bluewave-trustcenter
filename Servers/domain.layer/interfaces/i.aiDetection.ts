@@ -7,6 +7,10 @@
  * @module domain.layer/interfaces/i.aiDetection
  */
 
+import type { DimensionKey, RiskGrade } from "../../config/riskScoringConfig";
+
+export type { DimensionKey, RiskGrade };
+
 // ============================================================================
 // Scan Types
 // ============================================================================
@@ -51,8 +55,8 @@ export interface IScan {
   repository_id?: number | null;
   triggered_by_type?: string;
   risk_score?: number | null;
-  risk_score_grade?: string | null;
-  risk_score_details?: Record<string, unknown> | null;
+  risk_score_grade?: RiskGrade | null;
+  risk_score_details?: IRiskScoreDetails | null;
   risk_score_calculated_at?: Date | null;
   // Incremental scan fields
   scan_mode?: ScanMode;
@@ -295,12 +299,63 @@ export interface IFindingsByConfidence {
 }
 
 /**
+ * Summary of scan findings by detection type (inventory finding types)
+ */
+export interface IFindingsByType {
+  library: number;
+  dependency: number;
+  api_call: number;
+  secret: number;
+  model_ref: number;
+  rag_component: number;
+  agent: number;
+}
+
+/**
  * Summary of scan findings
  */
 export interface IScanSummary {
   total: number;
   by_confidence: IFindingsByConfidence;
   by_provider: Record<string, number>;
+  by_finding_type: IFindingsByType;
+}
+
+/**
+ * Per-dimension contribution inside a risk score payload
+ */
+export interface IDimensionScore {
+  score: number;
+  penalty_count: number;
+  top_contributors: string[];
+}
+
+/**
+ * LLM-suggested risk entry nested under risk_score_details
+ */
+export interface ISuggestedRisk {
+  risk_name: string;
+  risk_description: string;
+  risk_category: string[];
+  ai_lifecycle_phase: string;
+  likelihood: number;
+  severity: number;
+  impact: string;
+  mitigation_plan: string;
+  dimension: DimensionKey;
+  finding_refs: string[];
+}
+
+/**
+ * Structured risk score details returned on scan detail responses
+ */
+export interface IRiskScoreDetails {
+  dimensions: Record<DimensionKey, IDimensionScore>;
+  llm_enhanced: boolean;
+  llm_narrative: string | null;
+  llm_recommendations: string[] | null;
+  llm_adjustments: Record<DimensionKey, number> | null;
+  llm_suggested_risks: ISuggestedRisk[] | null;
 }
 
 /**
@@ -330,8 +385,8 @@ export interface IScanResponse {
     error_message?: string;
     triggered_by: ITriggeredByUser;
     risk_score?: number | null;
-    risk_score_grade?: string | null;
-    risk_score_details?: Record<string, unknown> | null;
+    risk_score_grade?: RiskGrade | null;
+    risk_score_details?: IRiskScoreDetails | null;
     risk_score_calculated_at?: string | null;
     scan_mode?: ScanMode;
     base_commit_sha?: string | null;
@@ -423,7 +478,7 @@ export interface IScanListItem {
   duration_ms?: number;
   triggered_by: ITriggeredByUser;
   risk_score?: number | null;
-  risk_score_grade?: string | null;
+  risk_score_grade?: RiskGrade | null;
   scan_mode?: ScanMode;
   baseline_scan_id?: number | null;
   changed_files_count?: number | null;

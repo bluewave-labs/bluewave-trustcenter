@@ -277,13 +277,15 @@ export interface FindingsByType {
   agent: number;
 }
 
+/** Mirrors backend IScanSummary from GET /ai-detection/scans/:id */
 export interface ScanSummary {
   total: number;
   by_confidence: FindingsByConfidence;
   by_provider: Record<string, number>;
-  by_finding_type?: FindingsByType;
+  by_finding_type: FindingsByType;
 }
 
+/** Mirrors backend IScanResponse from GET /ai-detection/scans/:id */
 export interface ScanResponse {
   scan: Scan;
   summary: ScanSummary;

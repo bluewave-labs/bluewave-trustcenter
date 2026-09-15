@@ -15,6 +15,7 @@ import {
   ICreateScanInput,
   IUpdateScanProgressInput,
   ICreateFindingInput,
+  IScanSummary,
   ScanStatus,
   GovernanceStatus,
 } from "../domain.layer/interfaces/i.aiDetection";
@@ -951,20 +952,7 @@ export async function getAllFindingsForExportQuery(
 export async function getFindingsSummaryQuery(
   scanId: number,
   organizationId: number,
-): Promise<{
-  total: number;
-  by_confidence: { high: number; medium: number; low: number };
-  by_provider: Record<string, number>;
-  by_finding_type: {
-    library: number;
-    dependency: number;
-    api_call: number;
-    secret: number;
-    model_ref: number;
-    rag_component: number;
-    agent: number;
-  };
-}> {
+): Promise<IScanSummary> {
   validateOrganizationId(organizationId);
   // GROUP BY result sets are naturally bounded by enum/finite domains
   // (confidence: 3 values, finding_type: ~7 values). Provider is free-form so
